@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.gu.fms</groupId>
+        <artifactId>fms-app</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>fms-desktop</artifactId>
+    <name>FMS Desktop</name>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <main.class>org.gu.fms.desktop.Launcher</main.class>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.gu.fms</groupId>
+            <artifactId>fms-domain</artifactId>
+        </dependency>
+
+        <!-- JavaFX -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+        </dependency>
+
+        <!-- Interface -->
+        <dependency>
+            <groupId>org.kordamp.ikonli</groupId>
+            <artifactId>ikonli-javafx</artifactId>
+            <version>${ikonli.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.kordamp.ikonli</groupId>
+            <artifactId>ikonli-materialdesign2-pack</artifactId>
+            <version>${ikonli.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.synedra</groupId>
+            <artifactId>validatorfx</artifactId>
+            <version>${validatorfx.version}</version>
+        </dependency>
+        <dependency>
+            <!-- Tableau de bord (intégration à l'étape « Tableau de bord ») -->
+            <groupId>eu.hansolo</groupId>
+            <artifactId>tilesfx</artifactId>
+            <version>${tilesfx.version}</version>
+        </dependency>
+
+        <!-- Infrastructure -->
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <version>${guice.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>${sqlite-jdbc.version}</version>
+        </dependency>
+
+        <!-- Tests -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <configuration>
+                    <mainClass>${main.class}</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
