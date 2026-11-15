@@ -25,6 +25,7 @@
 
         <!-- Interface -->
         <javafx.version>21.0.9</javafx.version>              <!-- LTS ; dernière ligne compatible JDK 17 -->
+        <atlantafx.version>2.0.1</atlantafx.version>
         <ikonli.version>12.4.0</ikonli.version>
         <validatorfx.version>1.0.0</validatorfx.version>
         <tilesfx.version>17.1.31</tilesfx.version>
