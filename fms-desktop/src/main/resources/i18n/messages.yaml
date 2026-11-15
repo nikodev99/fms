@@ -1,0 +1,180 @@
+# FMS Desktop — textes de l'interface (français, langue par défaut)
+# Fichier UTF-8: Apostrophe typographique ’ partout : l'apostrophe droite a un sens spécial pour MessageFormat:
+# Une clé absente s'affiche « ! Clé ! »:
+
+# ---- Coque ---------------------------------------------------------------------------------
+shell:
+  tagline: Gestion de flotte
+  database: "Base : {0}"
+  version: FMS Desktop 0:1:0
+
+theme:
+  light: Clair
+  dark: Sombre
+  system:
+    label: "System"
+    tooltip: Suivre le réglage clair / sombre de Windows
+
+# ---- Navigation ----------------------------------------------------------------------------
+nav:
+  section:
+    operations: Opérations
+    fleet: Flotte
+    finance: Finances
+    analysis: Analyse
+  dashboard: Tableau de bord
+  cash: Caisse du jour
+  collections: Versements
+  transactions: Transactions
+  vehicles: Véhicules
+  drives: Chauffeurs
+  maintenance: Entretien
+  accounts: Comptes
+  payroll: Paie
+  loans: Prêts
+  reports: Rapports
+  simulations: Simulations
+  settings: Paramètres
+
+# ---- Actions et textes communs -----------------------------------------------------------------
+action:
+  save: Enregistrer
+  cancel: Annuler
+  close: Fermer
+  ok: Ok
+common:
+  search: Recherche
+  none: "-"
+  notSpecified: Non renseigné
+  datePrompt: jj/mm/aaaa
+  noResultText: Aucun enregistrement ne correspond à la recherche ou au filtre.
+unit:
+  km: km
+comingSoon:
+  title: Module en construction
+  text: Cet écran n’est pas encore disponible dans cette version. Il sera ajouté dans une prochaine étape.
+
+# ---- Validation (clés aussi produites par le domaine) ----------------------------------------
+validation:
+  required: Champ obligatoire.
+  maxLength: {0,number,integer} caractères au maximum.
+  notNegative: La valeur ne peut pas être négative.
+  notInFuture: La date ne peut pas être dans le futur.
+  invalidAmount: Montant invalide.
+  invalidNumber: Nombre invalide.
+  invalidDate: Date invalide (jj/mm/aaaa).
+
+# ---- Erreurs ------------------------------------------------------------------------------
+error:
+  unexpected: Une erreur inattendue s’est produite. L’opération n’a pas été effectuée.
+crud:
+  discard:
+    title: Abandonner les modifications ?
+    text: Les modifications de ce formulaire ne sont pas enregistrées. Elles seront perdues.
+    confirm: Abandonner
+  invalid:
+    title: Enregistrement refusé
+  stale:
+    title: Enregistrement modifié entre-temps
+    text: Cet enregistrement a été modifié depuis son ouverture. Fermez le formulaire et rouvrez-le pour repartir de la version à jour.
+  failed:
+    title: Enregistrement impossible
+    text: L’enregistrement n’a pas pu être effectué. Aucune donnée n’a été modifiée.
+
+# ---- Rôles -------------------------------------------------------------------------------
+enum:
+  Role:
+    OWNER: Propriétaire
+    CASHIER: Caissier
+    ACCOUNTANT: Comptable
+    FLEET_MANAGER: Gestionnaire de flotte
+  VehicleCategory:
+    TAXI: Taxi
+    PRIVATE_HIRE: VTC
+    RENTAL: Location
+    DELIVERY: Livraison
+    COMPANY: Véhicule de société
+    OTHER: Autre
+  
+  VehicleStatus:
+    ACTIVE: En activité
+    UNDER_MAINTENANCE: En entretien
+    TEMPORARILY_UNAVAILABLE: Indisponible
+    IMMOBILISED: Immobilisé
+    SOLD: Vendu
+    INACTIVE: Inactif
+  
+  AcquisitionMethod:
+    CASH: Achat comptant
+    LOAN: Crédit
+    OTHER: Autre
+    
+# ---- Tableau de bord ------------------------------------------------------------------------
+dashboard:
+  openCash: Ouvrir la caisse
+  recordCollection: Enregistrer un versement
+  kpi:
+    collections:
+      label: Versements du jour
+      caption: Disponible avec le module Versements
+    gap:
+      label: Écart du jour
+      caption: Manquants et excédents
+    cash:
+      label: Trésorerie consolidée
+      caption: Disponible avec le module Comptes
+    vehicles:
+      label: Véhicules en activité
+      link: Gérer les véhicules
+      caption: {0,choice,0#Aucun véhicule enregistré|1#sur 1 véhicule|1<sur {0,number,integer} véhicules}
+  collections:
+    title: Versements du jour
+    empty: Aucun versement à afficher
+    emptyText: Les versements des chauffeurs apparaîtront ici avec le module Versements.
+  balances:
+    title: Soldes des comptes
+    cash: Caisse
+    mtn: MTN Mobile Money
+    airtel: Airtel Money
+    bank: Banque
+  alerts:
+    title: Alertes
+    empty: Aucune alerte
+    emptyText: Documents, entretiens et seuils de réparation
+
+# ---- Véhicules ---------------------------------------------------------------------------
+vehicles:
+  count: {0,choice,0#Aucun véhicule|1#1 véhicule|1<{0,number,integer} véhicules}
+  countFiltered: {0,number,integer} sur {1,number,integer} véhicules
+  column:
+    vehicle: Véhicule
+    purchasePrice: Prix d’achat
+  filter:
+    allStatuses: Tous les statuts
+  empty:
+    title: Aucun véhicule enregistré
+    text: Ajoutez les véhicules de la flotte pour suivre leurs versements, leur entretien et leur rentabilité.
+  create: Nouveau véhicule
+  edit: Modifier {0}
+  created: Véhicule {0} enregistré.
+  updated: Véhicule {0} mis à jour.
+  section:
+    identification: Identification
+    acquisition: Acquisition
+    follow: Suivi
+  registration:
+    label: Immatriculation
+    prompt: Ex. BZ 1234 A
+    invalidChars: Lettres, chiffres, espaces et tirets uniquement.
+    taken: L’immatriculation {0} est déjà enregistrée.
+  make: Marque
+  model: Modèle
+  category: Catégorie
+  status: Statut
+  acquisitionDate: Date d’acquisition
+  acquisitionMethod: Mode d’acquisition
+  purchasePrice: Prix d’achat
+  currentMileage: Kilométrage
+  repairThreshold: Seuil de réparations cumulées
+  repairThreshold.help: Au-delà de ce montant, le véhicule est signalé pour une évaluation (réparer, garder ou vendre).
+  notes: Remarques

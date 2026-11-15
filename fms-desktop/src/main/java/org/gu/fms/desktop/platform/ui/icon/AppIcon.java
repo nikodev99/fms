@@ -1,0 +1,66 @@
+package org.gu.fms.desktop.platform.ui.icon;
+
+import org.kordamp.ikonli.Ikon;
+import org.kordamp.ikonli.materialdesign2.*;
+
+/**
+ * Catalogue des icônes de l'application, par rôle et non par dessin.
+ * <p>
+ * Les écrans utilisent toujours ces noms ({@code AppIcon.VEHICLE}), jamais un code Ikonli direct :
+ * changer de jeu d'icônes ou de dessin se fait ici, une seule fois.
+ * Jeu utilisé : Material Design Icons (Ikonli, pack materialdesign2).
+ */
+public enum AppIcon {
+    //Navigation
+    DASHBOARD(MaterialDesignV.VIEW_DASHBOARD_OUTLINE),
+    CASH_REGISTER(MaterialDesignC.CASH_REGISTER),
+    COLLECTIONS(MaterialDesignC.CASH_MULTIPLE),
+    TRANSACTIONS(MaterialDesignS.SWAP_HORIZONTAL),
+    VEHICLE(MaterialDesignC.CAR_OUTLINE),
+    DRIVERS(MaterialDesignA.ACCOUNT_GROUP_OUTLINE),
+    MAINTENANCE(MaterialDesignW.WRENCH_OUTLINE),
+    ACCOUNTS(MaterialDesignW.WALLET_OUTLINE),
+    PAYROLL(MaterialDesignA.ACCOUNT_CASH_OUTLINE),
+    LOAN(MaterialDesignB.BANK_OUTLINE),
+    REPORTS(MaterialDesignF.FILE_CHART_OUTLINE),
+    SIMULATION(MaterialDesignC.CALCULATOR_VARIANT_OUTLINE),
+    SETTINGS(MaterialDesignC.COG_OUTLINE),
+
+    // Actions
+    ADD(MaterialDesignP.PLUS),
+    EDIT(MaterialDesignP.PENCIL_OUTLINE),
+    SAVE(MaterialDesignC.CONTENT_SAVE_OUTLINE),
+    CLOSE(MaterialDesignC.CLOSE),
+    SEARCH(MaterialDesignM.MAGNIFY),
+    FILTER(MaterialDesignF.FILTER_VARIANT),
+    REFRESH(MaterialDesignR.REFRESH),
+    LOGOUT(MaterialDesignL.LOGOUT),
+    OPEN_CASH(MaterialDesignL.LOCK_OPEN_VARIANT_OUTLINE),
+    CHEVRON_RIGHT(MaterialDesignC.CHEVRON_RIGHT),
+
+    // Thème
+    THEME_LIGHT(MaterialDesignW.WHITE_BALANCE_SUNNY),
+    THEME_DARK(MaterialDesignW.WEATHER_NIGHT),
+    THEME_SYSTEM(MaterialDesignM.MONITOR),
+
+    // États
+    NOTIFICATIONS(MaterialDesignB.BELL_OUTLINE),
+    SUCCESS(MaterialDesignC.CHECK_CIRCLE_OUTLINE),
+    INFO(MaterialDesignI.INFORMATION_OUTLINE),
+    WARNING(MaterialDesignA.ALERT_OUTLINE),
+    ERROR(MaterialDesignA.ALERT_CIRCLE_OUTLINE),
+    UNDER_CONSTRUCTION(MaterialDesignH.HAMMER_WRENCH),
+    DATABASE(MaterialDesignD.DATABASE_OUTLINE),
+    ARCHIVE(MaterialDesignA.ARCHIVE_OUTLINE)
+    ;
+
+    private final Ikon ikon;
+
+    AppIcon(Ikon ikon) {
+        this.ikon = ikon;
+    }
+
+    public Ikon ikon() {
+        return ikon;
+    }
+}
