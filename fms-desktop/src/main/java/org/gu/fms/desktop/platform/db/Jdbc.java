@@ -17,7 +17,7 @@ import java.util.Optional;
  * Types de paramètres acceptés : null, String, Long, Integer, Boolean, LocalDate, Instant, Enum, Money.
  */
 @Singleton
-public class Jdbc {
+public final class Jdbc {
     private final TransactionManager tx;
 
     @Inject

@@ -91,6 +91,15 @@ public final class Database implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-
+        if (connection == null) {
+            return;
+        }
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            LOG.log(System.Logger.Level.WARNING, "Fermeture de la base incomplète", e);
+        } finally {
+            connection = null;
+        }
     }
 }
