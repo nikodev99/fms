@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>fms-server</artifactId>
+    <name>FMS Server</name>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>

@@ -15,6 +15,7 @@ import org.gu.fms.desktop.app.AppPaths;
 import org.gu.fms.desktop.app.AppRoutes;
 import org.gu.fms.desktop.app.shell.ShellController;
 import org.gu.fms.desktop.platform.db.Database;
+import org.gu.fms.desktop.platform.db.migration.MigrationEngine;
 import org.gu.fms.desktop.platform.ui.nav.Navigator;
 import org.gu.fms.desktop.platform.ui.overlay.OverlayHost;
 import org.gu.fms.desktop.platform.ui.task.UiTasks;
@@ -40,8 +41,8 @@ public class FmsApplication extends Application {
     public void init() {
         try {
             injector = Guice.createInjector(new AppModule(AppPaths.resolve()));
-            //injector.getInstance(Database.class).open();
-            //injector.getInstance(MigrationEngine.class).migrate();
+            injector.getInstance(Database.class).open();
+            injector.getInstance(MigrationEngine.class).migrate();
         }catch (RuntimeException e) {
             startupError = e;
         }
@@ -63,7 +64,8 @@ public class FmsApplication extends Application {
 
         injector.getInstance(ThemeManager.class).attach(root);
         injector.getInstance(OverlayHost.class).attach(root);
-        injector.getInstance(Navigator.class).navigate(AppRoutes.DASHBOARD);
+        injector.getInstance(Navigator.class).navigate(AppRoutes.DASHBOARD)
+                .whenComplete((ok, e) -> {if (e != null) e.printStackTrace();});
 
         for (int size: ICON_SIZES) {
             try (InputStream icon = FmsApplication.class.getResourceAsStream(String.format(ICON_PATTERN, size))) {
