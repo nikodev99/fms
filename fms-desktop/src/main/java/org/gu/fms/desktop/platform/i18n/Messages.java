@@ -2,8 +2,8 @@ package org.gu.fms.desktop.platform.i18n;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import org.gu.fms.desktop.platform.common.FieldError;
 import org.gu.fms.desktop.platform.settings.AppSettings;
+import org.gu.fms.domain.common.FieldError;
 
 import java.text.MessageFormat;
 import java.util.MissingResourceException;
@@ -45,7 +45,7 @@ public final class Messages {
     }
 
     public String error(FieldError error) {
-        return get(error.messageKey(), error.arguments().toArray());
+        return get(error.messageKey(), error.args().toArray());
     }
 
     public ResourceBundle bundle() {

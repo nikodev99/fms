@@ -18,7 +18,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-@Singleton public final class VehiculeService implements CrudService<Vehicle> {
+@Singleton public final class VehicleService implements CrudService<Vehicle> {
     static final String AUDIT_TYPE = "vehicle";
 
     private final VehiculeRepository repository;
@@ -27,7 +27,7 @@ import java.util.List;
     private final Clock clock;
     private final AppSettings settings;
 
-    @Inject public VehiculeService(VehiculeRepository repository, TransactionManager tx, AuditLog audit, Clock clock, AppSettings settings) {
+    @Inject public VehicleService(VehiculeRepository repository, TransactionManager tx, AuditLog audit, Clock clock, AppSettings settings) {
         this.repository = repository;
         this.tx = tx;
         this.audit = audit;

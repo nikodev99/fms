@@ -64,11 +64,15 @@ public final class Navigator {
     }
 
     private void show(Route route) {
-        Screen screen = getScreen(route);
-        Node view = screen.view();
-        host.getChildren().setAll(view);
-        current.set(route);
-        screen.onShow();
+        try {
+            Screen screen = getScreen(route);
+            host.getChildren().setAll(screen.view());
+            current.set(route);
+            screen.onShow();
+        } catch (RuntimeException e) {
+            e.printStackTrace();   // diagnostic
+            throw e;
+        }
     }
 
     private Screen getScreen(Route route) {

@@ -5,7 +5,7 @@ import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import org.gu.fms.desktop.app.AppRoutes;
-import org.gu.fms.desktop.features.vehicle.VehiculeService;
+import org.gu.fms.desktop.features.vehicle.VehicleService;
 import org.gu.fms.desktop.platform.format.Formats;
 import org.gu.fms.desktop.platform.i18n.Messages;
 import org.gu.fms.desktop.platform.settings.AppSettings;
@@ -25,7 +25,7 @@ public final class DashboardScreen implements Screen {
 
     private final ViewLoader views;
     private final Navigator navigator;
-    private final VehiculeService vehicles;
+    private final VehicleService vehicles;
     private final UiTasks tasks;
     private final Messages messages;
     private final Formats formats;
@@ -38,10 +38,10 @@ public final class DashboardScreen implements Screen {
     @FXML private Label vehiclesCaption;
 
     @Inject
-    public DashboardScreen(ViewLoader views, Navigator navigator, VehiculeService vehiculeService, UiTasks tasks, Messages messages, Formats formats, Clock clock, AppSettings settings) {
+    public DashboardScreen(ViewLoader views, Navigator navigator, VehicleService vehicleService, UiTasks tasks, Messages messages, Formats formats, Clock clock, AppSettings settings) {
         this.views = views;
         this.navigator = navigator;
-        this.vehicles = vehiculeService;
+        this.vehicles = vehicleService;
         this.tasks = tasks;
         this.messages = messages;
         this.formats = formats;
