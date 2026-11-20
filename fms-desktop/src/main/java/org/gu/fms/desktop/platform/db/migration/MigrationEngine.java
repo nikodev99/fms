@@ -9,6 +9,7 @@ import java.sql.Statement;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -27,7 +28,7 @@ public final class MigrationEngine {
     public static final String DEFAULT_LOCATION = "db/migration";
 
     private static final System.Logger LOG = System.getLogger(MigrationEngine.class.getName());
-    private static final DateTimeFormatter BACKUP_STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").withZone(ZoneId.systemDefault());
+    private static final DateTimeFormatter BACKUP_STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").withZone(ZoneOffset.UTC);
 
     private final Database database;
     private final TransactionManager tx;
@@ -55,7 +56,7 @@ public final class MigrationEngine {
 
         int currentVersion = applied.keySet().stream().mapToInt(Integer::intValue).max().orElse(0);
         List<Migration> pending = new ArrayList<>();
-        for (Migration m: available) {
+        for (Migration m : available) {
             if (!applied.containsKey(m.version())) {
                 if (m.version() < currentVersion) {
                     throw new MigrationException("Migration " + m.resource() + " antérieure à la version de la base ("
@@ -82,10 +83,54 @@ public final class MigrationEngine {
         return new MigrationReport(currentVersion, newVersion, List.copyOf(pending), backup);
     }
 
-    private void verifyApplied(List<Migration> available, Map<Integer, AppliedMigration> applied) {
+    /** Version la plus récente connue de cette application (dernier script embarqué). */
+    public int latestAvailableVersion() {
+        List<Migration> available = loadAvailable();
+        return available.isEmpty() ? 0 : available.get(available.size() - 1).version();
+    }
+
+    private List<Migration> loadAvailable() {
+        TreeMap<Integer, Migration> byVersion = new TreeMap<>();
+        for (String resource : ClasspathResources.list(loader, location, ".sql")) {
+            Migration m = Migration.fromResource(resource, ClasspathResources.read(loader, resource));
+            Migration duplicate = byVersion.put(m.version(), m);
+            if (duplicate != null) {
+                throw new MigrationException("Deux migrations portent la version " + m.version() + " : "
+                        + duplicate.resource() + " et " + m.resource());
+            }
+        }
+        return new ArrayList<>(byVersion.values());
+    }
+
+    private void createHistoryTable() {
+        tx.runInTransaction(c -> {
+            try (Statement st = c.createStatement()) {
+                st.execute("""
+                        CREATE TABLE IF NOT EXISTS schema_version (
+                            version      INTEGER PRIMARY KEY,
+                            description  TEXT    NOT NULL,
+                            script       TEXT    NOT NULL,
+                            checksum     TEXT    NOT NULL,
+                            installed_at TEXT    NOT NULL,
+                            execution_ms INTEGER NOT NULL
+                        )""");
+            }
+        });
+    }
+
+    private Map<Integer, AppliedMigration> loadApplied() {
+        Map<Integer, AppliedMigration> result = new HashMap<>();
+        for (AppliedMigration a : jdbc.query("SELECT version, script, checksum FROM schema_version",
+                row -> new AppliedMigration(row.intValue("version"), row.string("script"), row.string("checksum")))) {
+            result.put(a.version(), a);
+        }
+        return result;
+    }
+
+    private static void verifyApplied(List<Migration> available, Map<Integer, AppliedMigration> applied) {
         Map<Integer, Migration> byVersion = new HashMap<>();
         available.forEach(m -> byVersion.put(m.version(), m));
-        for (AppliedMigration a: applied.values()) {
+        for (AppliedMigration a : applied.values()) {
             Migration m = byVersion.get(a.version());
             if (m == null) {
                 throw new MigrationException("La base contient la migration " + a.script()
@@ -117,47 +162,5 @@ public final class MigrationEngine {
             throw new MigrationException("Échec de la migration " + m.resource() + " : " + e.getMessage(), e);
         }
         LOG.log(System.Logger.Level.INFO, "Migration appliquée : {0}", m.resource());
-    }
-
-    private Map<Integer, AppliedMigration> loadApplied() {
-        Map<Integer, AppliedMigration> result = new HashMap<>();
-        List<AppliedMigration> applied = jdbc.query(
-                "SELECT version, script, checksum FROM schema_version",
-                row -> new AppliedMigration(row.intValue("version"), row.string("script"), row.string("checksum"))
-        );
-        for (AppliedMigration a: applied) {
-            result.put(a.version(), a);
-        }
-        return result;
-    }
-
-    private void createHistoryTable() {
-        tx.runInTransaction(c -> {
-            try(Statement stmt = c.createStatement()) {
-                stmt.execute("""
-                    CREATE TABLE IF NOT EXISTS schema_version(
-                        version INTEGER PRIMARY KEY,
-                        description TEXT NOT NULL,
-                        script TEXT NOT NULL,
-                        checksum TEXT NOT NULL,
-                        installed_at TEXT NOT NULL,
-                        execution_ms INTEGER NOT NULL 
-                    )
-                """);
-            }
-        });
-    }
-
-    private List<Migration> loadAvailable() {
-        TreeMap<Integer, Migration> byVersion = new TreeMap<>();
-        for (String resource: ClasspathResources.list(loader, location, ".sql")) {
-            Migration m = Migration.fromResource(resource, ClasspathResources.read(loader, resource));
-            Migration duplicate = byVersion.put(m.version(), m);
-            if (duplicate != null) {
-                throw new MigrationException("Deux migrations portent la version " + m.version() + " : "
-                        + duplicate.resource() + " et " + m.resource());
-            }
-        }
-        return new ArrayList<>(byVersion.values());
     }
 }

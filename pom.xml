@@ -29,6 +29,7 @@
         <ikonli.version>12.4.0</ikonli.version>
         <validatorfx.version>1.0.0</validatorfx.version>
         <tilesfx.version>17.1.31</tilesfx.version>
+        <language-annotations.version>26.1.0</language-annotations.version>
 
         <!-- Infrastructure -->
         <guice.version>7.0.0</guice.version>

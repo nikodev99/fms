@@ -1,8 +1,5 @@
-package org.gu.fms.desktop.platform.db.migration;
+package org.gu.fms.desktop.features.vehicle;
 
-import org.gu.fms.desktop.features.vehicle.VehicleCategoryRepository;
-import org.gu.fms.desktop.features.vehicle.VehicleService;
-import org.gu.fms.desktop.features.vehicle.VehicleRepository;
 import org.gu.fms.desktop.platform.audit.AuditLog;
 import org.gu.fms.desktop.platform.db.DataAccessException;
 import org.gu.fms.desktop.platform.db.StaleDataException;

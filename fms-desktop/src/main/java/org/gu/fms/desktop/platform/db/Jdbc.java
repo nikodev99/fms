@@ -2,7 +2,9 @@ package org.gu.fms.desktop.platform.db;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.gu.fms.domain.common.Percent;
 import org.gu.fms.domain.money.Money;
+import org.intellij.lang.annotations.Language;
 
 import java.sql.*;
 import java.time.Instant;
@@ -25,9 +27,9 @@ public final class Jdbc {
         this.tx = tx;
     }
 
-    public <T>List<T> query(String sql, RowMapper<T> mapper, Object... params) {
+    public <T> List<T> query(@Language("SQL") String sql, RowMapper<T> mapper, Object... params) {
         return tx.withConnection(c -> {
-            try(PreparedStatement ps = prepare(c, sql, params); ResultSet rs = ps.executeQuery()) {
+            try (PreparedStatement ps = prepare(c, sql, params); ResultSet rs = ps.executeQuery()) {
                 Row row = new Row(rs);
                 List<T> result = new ArrayList<>();
                 while (rs.next()) {
@@ -38,15 +40,16 @@ public final class Jdbc {
         });
     }
 
-    public <T> Optional<T> queryOne(String sql, RowMapper<T> mapper, Object... params) {
+    public <T> Optional<T> queryOne(@Language("SQL") String sql, RowMapper<T> mapper, Object... params) {
         List<T> rows = query(sql, mapper, params);
         if (rows.size() > 1) {
-            throw new IllegalStateException("Une ligne attendue, " + rows.size() + " obtenues : " + sql);
+            throw new DataAccessException("Une ligne attendue, " + rows.size() + " obtenues : " + sql);
         }
         return rows.stream().findFirst();
     }
 
-    public long queryLong(String sql, Object... params) {
+    /** Première colonne de l'unique ligne (ex. SELECT COUNT(*) …). */
+    public long queryLong(@Language("SQL") String sql, Object... params) {
         return tx.withConnection(c -> {
             try (PreparedStatement ps = prepare(c, sql, params); ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
@@ -61,7 +64,7 @@ public final class Jdbc {
         });
     }
 
-    public boolean exists(String sql, Object... params) {
+    public boolean exists(@Language("SQL") String sql, Object... params) {
         return tx.withConnection(c -> {
             try (PreparedStatement ps = prepare(c, sql, params); ResultSet rs = ps.executeQuery()) {
                 return rs.next();
@@ -69,34 +72,35 @@ public final class Jdbc {
         });
     }
 
-    public int update(String sql, Object... params) {
+    public int update(@Language("SQL") String sql, Object... params) {
         return tx.withConnection(c -> {
-            try(PreparedStatement ps = prepare(c, sql, params)) {
+            try (PreparedStatement ps = prepare(c, sql, params)) {
                 return ps.executeUpdate();
             }
         });
     }
 
-    public long insert(String sql, Object... params) {
+    /** INSERT puis identifiant généré (rowid) lu sur la même connexion, sous le même verrou. */
+    public long insert(@Language("SQL") String sql, Object... params) {
         return tx.withConnection(c -> {
-            try(PreparedStatement ps = prepare(c, sql, params)) {
+            try (PreparedStatement ps = prepare(c, sql, params)) {
                 ps.executeUpdate();
             }
-            try(Statement st = c.createStatement(); ResultSet rs = st.executeQuery("SELECT last_insert_rowid()")) {
+            try (Statement st = c.createStatement(); ResultSet rs = st.executeQuery("SELECT last_insert_rowid()")) {
                 rs.next();
                 return rs.getLong(1);
             }
         });
     }
 
-    private PreparedStatement prepare(Connection c, String sql, Object[] params) throws SQLException {
+    private static PreparedStatement prepare(Connection c, @Language("SQL") String sql, Object[] params) throws SQLException {
         PreparedStatement ps = c.prepareStatement(sql);
         try {
-            for(int i = 0; i < params.length; i++) {
+            for (int i = 0; i < params.length; i++) {
                 bind(ps, i + 1, params[i]);
             }
             return ps;
-        }catch (SQLException | RuntimeException e) {
+        } catch (SQLException | RuntimeException e) {
             ps.close();
             throw e;
         }
@@ -121,6 +125,8 @@ public final class Jdbc {
             ps.setString(index, e.name());
         } else if (value instanceof Money m) {
             ps.setLong(index, m.minor());
+        } else if (value instanceof Percent p) {
+            ps.setLong(index, p.basisPoints());
         } else {
             throw new IllegalArgumentException("Type de paramètre SQL non pris en charge : " + value.getClass().getName());
         }
