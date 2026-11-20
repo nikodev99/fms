@@ -5,8 +5,8 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.scene.Node;
 import javafx.scene.layout.StackPane;
+import org.gu.fms.desktop.platform.ui.Screen;
 
 import java.util.HashMap;
 import java.util.Map;

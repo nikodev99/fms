@@ -10,9 +10,7 @@ import org.gu.fms.desktop.platform.i18n.Messages;
 import org.gu.fms.desktop.platform.ui.icon.AppIcon;
 import org.gu.fms.desktop.platform.ui.icon.FmsIcon;
 import org.gu.fms.desktop.platform.ui.nav.Route;
-import org.gu.fms.desktop.platform.ui.nav.Screen;
-
-import java.awt.*;
+import org.gu.fms.desktop.platform.ui.Screen;
 
 /** Module visible dans le menu, mais pas encore construit : le dit clairement, sans fausses données. */
 public final class ComingSoonScreen implements Screen, Screen.RouteAware {

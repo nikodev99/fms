@@ -1,5 +1,6 @@
 package org.gu.fms.desktop.platform.ui.nav;
 
+import org.gu.fms.desktop.platform.ui.Screen;
 import org.gu.fms.desktop.platform.ui.icon.AppIcon;
 
 import java.util.Objects;

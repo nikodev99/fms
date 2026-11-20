@@ -10,7 +10,7 @@ import org.gu.fms.desktop.platform.format.Formats;
 import org.gu.fms.desktop.platform.i18n.Messages;
 import org.gu.fms.desktop.platform.settings.AppSettings;
 import org.gu.fms.desktop.platform.ui.nav.Navigator;
-import org.gu.fms.desktop.platform.ui.nav.Screen;
+import org.gu.fms.desktop.platform.ui.Screen;
 import org.gu.fms.desktop.platform.ui.task.UiTasks;
 import org.gu.fms.desktop.platform.ui.view.ViewLoader;
 import org.gu.fms.domain.vehicle.Vehicle;

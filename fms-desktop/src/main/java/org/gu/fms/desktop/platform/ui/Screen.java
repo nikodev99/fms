@@ -1,6 +1,7 @@
-package org.gu.fms.desktop.platform.ui.nav;
+package org.gu.fms.desktop.platform.ui;
 
 import javafx.scene.Node;
+import org.gu.fms.desktop.platform.ui.nav.Route;
 
 import java.util.concurrent.CompletableFuture;
 

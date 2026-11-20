@@ -19,7 +19,7 @@ import org.gu.fms.desktop.platform.services.CrudService;
 import org.gu.fms.desktop.platform.ui.Tone;
 import org.gu.fms.desktop.platform.ui.icon.AppIcon;
 import org.gu.fms.desktop.platform.ui.icon.FmsIcon;
-import org.gu.fms.desktop.platform.ui.nav.Screen;
+import org.gu.fms.desktop.platform.ui.Screen;
 import org.gu.fms.desktop.platform.ui.overlay.Drawer;
 import org.gu.fms.desktop.platform.ui.table.DataTable;
 import org.gu.fms.domain.common.FieldError;
