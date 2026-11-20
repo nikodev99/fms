@@ -38,16 +38,14 @@ public final class Form {
 
     private final Messages messages;
     private final Formats formats;
-
     private final Validator validator = new Validator();
-    private final List<Object> layout = new ArrayList<>();
+    private final List<Object> layout = new ArrayList<>();          // String (titre de section) ou FormField
     private final Map<String, FormField<?, ?>> fields = new LinkedHashMap<>();
     private final Map<FormField<?, ?>, Check> checks = new LinkedHashMap<>();
-
     private BooleanBinding dirty;
     private VBox view;
 
-    Form(final Messages messages, final Formats formats) {
+    Form(Messages messages, Formats formats) {
         this.messages = messages;
         this.formats = formats;
     }
@@ -73,6 +71,10 @@ public final class Form {
 
     public NumberInput number(String name, String label) {
         return add(new NumberInput(name, label, messages, formats));
+    }
+
+    public PercentInput percent(String name, String label) {
+        return add(new PercentInput(name, label, messages));
     }
 
     public DateInput date(String name, String label) {

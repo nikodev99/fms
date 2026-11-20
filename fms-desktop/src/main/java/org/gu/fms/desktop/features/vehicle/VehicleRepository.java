@@ -13,11 +13,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Singleton
-public class VehiculeRepository extends JdbcRepository<Vehicle> {
+public class VehicleRepository extends JdbcRepository<Vehicle> {
     private final AppSettings settings;
 
     @Inject
-    public VehiculeRepository(Jdbc jdbc, Clock clock, AppSettings settings) {
+    public VehicleRepository(Jdbc jdbc, Clock clock, AppSettings settings) {
         super(jdbc, clock);
         this.settings = settings;
     }
@@ -40,7 +40,7 @@ public class VehiculeRepository extends JdbcRepository<Vehicle> {
                 row.string("registration"),
                 row.string("make"),
                 row.string("model"),
-                row.enumValue("category", Vehicle.VehicleCategory.class),
+                row.longOrNull("category_id"),
                 row.enumValue("status", Vehicle.VehicleStatus.class),
                 row.localDate("acquisition_date"),
                 row.enumValue("acquisition_method", Vehicle.AcquisitionMethod.class),
@@ -51,30 +51,35 @@ public class VehiculeRepository extends JdbcRepository<Vehicle> {
     }
 
     @Override
-    protected Long idOf(Vehicle entity) {
-        return entity.id();
+    protected Long idOf(Vehicle v) {
+        return v.id();
     }
 
     @Override
-    protected long versionOf(Vehicle entity) {
-        return entity.version();
+    protected long versionOf(Vehicle v) {
+        return v.version();
     }
 
     @Override
-    protected Map<String, Object> columnsOf(Vehicle entity) {
+    protected Map<String, Object> columnsOf(Vehicle v) {
         Map<String, Object> c = new LinkedHashMap<>();
-        c.put("registration", entity.registration());
-        c.put("make", entity.make());
-        c.put("model", entity.model());
-        c.put("category", entity.category());
-        c.put("status", entity.status());
-        c.put("acquisition_date", entity.acquisitionDate());
-        c.put("acquisition_method", entity.acquisitionMethod());
-        c.put("purchase_price", entity.purchasePrice());
-        c.put("current_mileage", entity.currentMileage());
-        c.put("repair_threshold", entity.repairThreshold());
-        c.put("notes", entity.notes());
+        c.put("registration", v.registration());
+        c.put("make", v.make());
+        c.put("model", v.model());
+        c.put("category_id", v.categoryId());
+        c.put("status", v.status());
+        c.put("acquisition_date", v.acquisitionDate());
+        c.put("acquisition_method", v.acquisitionMethod());
+        c.put("purchase_price", v.purchasePrice());
+        c.put("current_mileage", v.currentMileage());
+        c.put("repair_threshold", v.repairThreshold());
+        c.put("notes", v.notes());
         return c;
+    }
+
+    /** Écrit seulement le kilométrage (relevé lors d'une intervention) ; verrou optimiste comme toute mise à jour. */
+    public long updateMileage(Vehicle v, long mileage) {
+        return update(v.withMileage(mileage));
     }
 
     /** Comparaison insensible à la casse (colonne COLLATE NOCASE). */

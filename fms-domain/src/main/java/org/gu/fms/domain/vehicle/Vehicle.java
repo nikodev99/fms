@@ -21,7 +21,7 @@ public record Vehicle(
         String registration,
         String make,
         String model,
-        VehicleCategory category,
+        Long categoryId,
         VehicleStatus status,
         LocalDate acquisitionDate,
         AcquisitionMethod acquisitionMethod,
@@ -31,7 +31,6 @@ public record Vehicle(
         String notes
 ) {
     public Vehicle {
-        Objects.requireNonNull(category, "category");
         Objects.requireNonNull(status, "status");
     }
 
@@ -40,39 +39,30 @@ public record Vehicle(
     }
 
     public String displayName() {
-        return registration + " - " + make + " " + model;
+        return registration + " — " + make + " " + model;
     }
 
-    public Vehicle withStatus(VehicleStatus status) {
-        return new Vehicle(
-                id, version, registration, make, model, category, status, acquisitionDate, acquisitionMethod, purchasePrice,
-                currentMileage, repairThreshold, notes
-        );
+    public Vehicle withStatus(VehicleStatus newStatus) {
+        return new Vehicle(id, version, registration, make, model, categoryId, newStatus, acquisitionDate,
+                acquisitionMethod, purchasePrice, currentMileage, repairThreshold, notes);
+    }
+
+    /** Copie avec un nouveau kilométrage (relevé lors d'une intervention d'entretien). */
+    public Vehicle withMileage(Long newMileage) {
+        return new Vehicle(id, version, registration, make, model, categoryId, status, acquisitionDate,
+                acquisitionMethod, purchasePrice, newMileage, repairThreshold, notes);
     }
 
     /** Copie avec l'identité attribuée par la base après enregistrement. */
     public Vehicle withIdentity(long newId, long newVersion) {
-        return new Vehicle(
-                newId, newVersion, registration, make, model, category, status, acquisitionDate, acquisitionMethod, purchasePrice,
-                currentMileage, repairThreshold, notes
-        );
+        return new Vehicle(newId, newVersion, registration, make, model, categoryId, status, acquisitionDate,
+                acquisitionMethod, purchasePrice, currentMileage, repairThreshold, notes);
     }
 
     /** Copie avec les champs texte normalisés (voir {@link VehicleRules#normalize(Vehicle)}). */
     Vehicle withText(String newRegistration, String newMake, String newModel, String newNotes) {
-        return new Vehicle(id, version, newRegistration, newMake, newModel, category, status, acquisitionDate,
+        return new Vehicle(id, version, newRegistration, newMake, newModel, categoryId, status, acquisitionDate,
                 acquisitionMethod, purchasePrice, currentMileage, repairThreshold, newNotes);
-    }
-
-
-    /** Catégories commerciales (instructions §1 et §4.1). Les libellés sont traduits côté interface. */
-    public enum VehicleCategory {
-        TAXI,
-        PRIVATE_HIRE,
-        RENTAL,
-        DELIVERY,
-        COMPANY,
-        OTHER
     }
 
     /** Statuts d'un véhicule (instructions §4.1). */

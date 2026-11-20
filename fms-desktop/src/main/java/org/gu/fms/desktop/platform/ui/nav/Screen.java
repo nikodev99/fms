@@ -27,4 +27,12 @@ public interface Screen {
     interface RouteAware {
         void setRoute(Route route);
     }
+
+    /**
+     * Écran affiché dans un onglet ou une section d'un autre écran : il ne dessine ni marge de page
+     * ni titre principal (le conteneur s'en charge). Appelé avant {@link #view()}.
+     */
+    interface Embeddable {
+        void embed();
+    }
 }

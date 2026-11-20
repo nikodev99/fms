@@ -141,10 +141,11 @@
 
 /* =========================== Menu latéral =========================== */
 
+/* Largeur (248 déplié / 68 réduit) pilotée par ShellController, animée : pas de largeur ici,
+   une largeur CSS l'emporterait sur celle du code et bloquerait l'animation. */
 .sidebar {
     -fx-background-color: -fms-sidebar;
     -fx-border-color: transparent -fms-sidebar-border transparent transparent;
-    -fx-pref-width: 248; -fx-min-width: 248; -fx-max-width: 248;
 }
 .brand { -fx-padding: 18 18 14 18; -fx-spacing: 10; }
 .brand-logo-fallback {
@@ -215,6 +216,16 @@
 .user-name { -fx-text-fill: -fms-sidebar-active-text; -fx-font-weight: bold; -fx-font-size: 12px; }
 .user-role { -fx-text-fill: -fms-sidebar-section; -fx-font-size: 11px; }
 .icon-button.sidebar-icon .fms-icon { -fx-icon-color: -fms-sidebar-icon; }
+
+/* Menu réduit : icônes seules, centrées ; info-bulles posées par ShellController */
+.sidebar.collapsed .brand { -fx-padding: 18 0 14 0; }
+.sidebar.collapsed .nav { -fx-padding: 4 10 12 10; }
+.sidebar.collapsed .nav-item { -fx-alignment: center; -fx-padding: 9 0 9 0; }
+.sidebar.collapsed .sidebar-footer { -fx-padding: 12 0 14 0; }
+.nav-separator { -fx-padding: 8 6 6 6; }
+.nav-separator .line { -fx-border-color: -fms-sidebar-border; -fx-border-width: 1 0 0 0; -fx-background-color: transparent; }
+.sidebar-toggle .fms-icon { -fx-icon-color: -fms-muted; }
+.sidebar-toggle:hover .fms-icon { -fx-icon-color: -fms-text; }
 .icon-button.sidebar-icon:hover { -fx-background-color: -fms-sidebar-hover; }
 .icon-button.sidebar-icon:hover .fms-icon { -fx-icon-color: -fms-sidebar-active-text; }
 
@@ -337,6 +348,7 @@
 .page-header { -fx-spacing: 12; -fx-alignment: center-left; }
 .page-title { -fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: -fms-text; }
 .page-subtitle { -fx-text-fill: -fms-muted; }
+.page-hint { -fx-text-fill: -fms-muted; -fx-font-size: 12px; }
 .inline-spinner { -fx-pref-width: 20; -fx-pref-height: 20; -fx-progress-color: -fms-accent; }
 
 .toolbar { -fx-spacing: 12; -fx-alignment: center-left; }
@@ -529,6 +541,88 @@
 }
 
 .filter-combo { -fx-pref-width: 190; }
+
+/* =========================== Écrans à sections =========================== */
+
+/* Onglets (Chauffeurs | Affectations…) : soulignement de l'onglet actif */
+.tabs {
+    -fx-spacing: 4;
+    -fx-border-color: transparent transparent -fms-border transparent;
+}
+.tab-button {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent transparent transparent transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-background-radius: 0;
+    -fx-effect: null;
+    -fx-padding: 8 14 9 14;
+    -fx-graphic-text-gap: 7;
+    -fx-text-fill: -fms-muted;
+    -fx-cursor: hand;
+}
+.tab-button .fms-icon { -fx-icon-color: -fms-subtle; }
+.tab-button:hover { -fx-text-fill: -fms-text; }
+.tab-button:selected {
+    -fx-text-fill: -fms-accent;
+    -fx-font-weight: bold;
+    -fx-border-color: transparent transparent -fms-accent transparent;
+}
+.tab-button:selected .fms-icon { -fx-icon-color: -fms-accent; }
+.tab-button:focus-visible { -fx-background-color: -fms-hover; }
+
+/* Navigation latérale des Paramètres */
+.section-nav-scroll, .section-nav-scroll > .viewport { -fx-background-color: transparent; -fx-background-insets: 0; }
+.section-nav-scroll { -fx-padding: 0; -fx-border-color: transparent; -fx-pref-width: 236; -fx-min-width: 236; -fx-max-width: 236; }
+.section-nav { -fx-spacing: 2; -fx-padding: 0 4 0 0; }
+.section-group {
+    -fx-text-fill: -fms-subtle;
+    -fx-font-size: 10.5px;
+    -fx-font-weight: bold;
+    -fx-padding: 12 10 4 10;
+}
+.section-button {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
+    -fx-border-color: transparent;
+    -fx-effect: null;
+    -fx-padding: 7 10 7 10;
+    -fx-graphic-text-gap: 10;
+    -fx-text-fill: -fms-text-2;
+    -fx-cursor: hand;
+}
+.section-button .fms-icon { -fx-icon-color: -fms-subtle; }
+.section-button:hover { -fx-background-color: -fms-hover; }
+.section-button:selected { -fx-background-color: -fms-accent-soft; -fx-text-fill: -fms-accent; -fx-font-weight: bold; }
+.section-button:selected .fms-icon { -fx-icon-color: -fms-accent; }
+
+.section-host { -fx-background-color: transparent; }
+.section-page { -fx-spacing: 16; -fx-padding: 0; -fx-background-color: transparent; }
+.section-title { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -fms-text; }
+.section-description { -fx-text-fill: -fms-muted; -fx-font-size: 12.5px; }
+
+/* Formulaires de paramètres : panneau défilant + pied fixe */
+.settings-panel { -fx-padding: 0; }
+.settings-scroll, .settings-scroll > .viewport { -fx-background-color: -fms-surface; -fx-background-insets: 0; }
+.settings-scroll { -fx-padding: 0; -fx-border-color: transparent; -fx-background-radius: 8 8 0 0; }
+.settings-body { -fx-padding: 20 24 20 24; -fx-spacing: 18; }
+.settings-footer {
+    -fx-padding: 12 24 12 24;
+    -fx-background-color: -fms-surface-alt;
+    -fx-background-radius: 0 0 8 8;
+    -fx-border-color: -fms-border transparent transparent transparent;
+}
+.embedded-table .table-panel { -fx-min-height: 260; -fx-pref-height: 300; }
+.logo-preview {
+    -fx-min-width: 80; -fx-min-height: 80; -fx-max-width: 80; -fx-max-height: 80;
+    -fx-background-color: -fms-surface-alt;
+    -fx-border-color: -fms-border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+.logo-preview .fms-icon { -fx-icon-color: -fms-subtle; }
+.info-grid .info-value { -fx-text-fill: -fms-text; }
 
 /* =========================== Barre d'état =========================== */
 

@@ -42,21 +42,20 @@ import java.util.stream.Collectors;
  *
  * @param <T> entité du domaine
  */
-public abstract class CrudScreen<T> implements Screen {
+public abstract class CrudScreen<T> implements Screen, Screen.Embeddable {
     protected final CrudContext ui;
     protected final Messages messages;
-
     private final CrudService<T> service;
     private final BooleanProperty loading = new SimpleBooleanProperty();
-
     private DataTable<T> table;
     private Node view;
     private Drawer drawer;
     private EntityEditor<T> editor;
+    private boolean embedded;
 
     protected CrudScreen(CrudContext ui, CrudService<T> service) {
         this.ui = ui;
-        this.messages = ui.messages();
+        this.messages = ui.messages;
         this.service = service;
     }
 
@@ -91,11 +90,38 @@ public abstract class CrudScreen<T> implements Screen {
         return null;
     }
 
-    // ---- Écran --------------------------------------------------------------------------------
+    /**
+     * Chargé HORS du fil JavaFX avant chaque rechargement de la liste : listes de référence nécessaires aux
+     * colonnes et aux éditeurs (catégories, véhicules, chauffeurs…). Les valeurs lues ici sont visibles par le
+     * fil JavaFX quand la liste s'affiche.
+     */
+    protected void prepare() {
+    }
 
+    /** Faux pour une liste en lecture seule (pas de bouton « Nouveau »). */
+    protected boolean canCreate() {
+        return true;
+    }
+
+    /** Faux si la ligne ne s'ouvre pas en édition (ex. ligne calculée). */
+    protected boolean canOpen(T item) {
+        return true;
+    }
+
+    /** Texte d'aide sous le titre (facultatif), ex. pour expliquer une règle de l'écran. */
+    protected String hint() {
+        return null;
+    }
 
     @Override
-    public Node view() {
+    public void embed() {
+        this.embedded = true;
+    }
+
+    // ---- Écran --------------------------------------------------------------------------------
+
+    @Override
+    public final Node view() {
         if (view == null) {
             view = build();
         }
@@ -129,6 +155,19 @@ public abstract class CrudScreen<T> implements Screen {
                 () -> countText(table.visibleCountProperty().get(), table.totalCountProperty().get()),
                 table.visibleCountProperty(), table.totalCountProperty()));
         VBox titles = new VBox(4, titleLabel, count);
+        if (embedded) {
+            titles.getChildren().remove(titleLabel);
+        }
+        String hintText = hint();
+        if (hintText != null) {
+            Label hintLabel = new Label(hintText);
+            hintLabel.getStyleClass().add("page-hint");
+            hintLabel.setWrapText(true);
+            hintLabel.setMinHeight(Region.USE_PREF_SIZE);
+            titles.getChildren().add(hintLabel);
+        }
+        HBox.setHgrow(titles, Priority.SOMETIMES);
+        titles.setAlignment(Pos.CENTER_LEFT);
 
         ProgressIndicator spinner = new ProgressIndicator();
         spinner.getStyleClass().add("inline-spinner");
@@ -137,6 +176,9 @@ public abstract class CrudScreen<T> implements Screen {
         Button create = new Button(createLabel(), new FmsIcon(AppIcon.ADD, 16));
         create.getStyleClass().add("primary");
         create.setOnAction(e -> openEditor(null));
+        create.setVisible(canCreate());
+        create.setManaged(canCreate());
+        create.setMinWidth(Region.USE_PREF_SIZE);          // le bouton garde son libellé complet ; le texte d'aide se replie
 
         HBox header = new HBox(12, titles, grow(), spinner, create);
         header.getStyleClass().add("page-header");
@@ -158,7 +200,7 @@ public abstract class CrudScreen<T> implements Screen {
             toolbar.getChildren().add(extra);
         }
 
-        VBox emptyAll = emptyState(icon(), emptyTitle(), emptyText(), true);
+        VBox emptyAll = emptyState(icon(), emptyTitle(), emptyText(), canCreate());
         VBox emptySearch = emptyState(AppIcon.SEARCH, messages.get("common.noResultTitle"),
                 messages.get("common.noResultText"), false);
         table.totalCountProperty().addListener((obs, o, total) ->
@@ -171,7 +213,11 @@ public abstract class CrudScreen<T> implements Screen {
         VBox.setVgrow(panel, Priority.ALWAYS);
 
         VBox page = new VBox(16, header, toolbar, panel);
-        page.getStyleClass().addAll("page", "content");
+        if (embedded) {
+            page.getStyleClass().add("section-page");
+        } else {
+            page.getStyleClass().addAll("page", "content");
+        }
         return page;
     }
 
@@ -201,7 +247,10 @@ public abstract class CrudScreen<T> implements Screen {
 
     /** Recharge la liste ; si {@code select} est fourni, sélectionne la ligne correspondante. */
     protected final void reload(Predicate<T> select) {
-        ui.tasks.job(service::findAll)
+        ui.tasks.job(() -> {
+                    prepare();
+                    return service.findAll();
+                })
                 .busy(loading)
                 .onSuccess(items -> {
                     table.setItems(items);
@@ -218,7 +267,13 @@ public abstract class CrudScreen<T> implements Screen {
         if (drawer != null && drawer.isOpen()) {
             return;
         }
+        if (existing == null ? !canCreate() : !canOpen(existing)) {
+            return;
+        }
         EntityEditor<T> current = createEditor(existing);
+        if (current == null) {
+            return;
+        }
         current.form().markClean();
         this.editor = current;
 

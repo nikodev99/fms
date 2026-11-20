@@ -19,6 +19,7 @@
   notifications s'empilent au-dessus (OverlayHost).
   Règle « responsive tout le temps » : BorderPane, Hgrow/Vgrow = ALWAYS, aucune coordonnée en pixels.
   Couleurs : uniquement via fms.css.
+  Menu latéral : déplié (libellés) ou réduit (icônes seules, info-bulles) ; largeur gérée par ShellController.
 -->
 <StackPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
            fx:controller="org.gu.fms.desktop.app.shell.ShellController"
@@ -31,14 +32,14 @@
     <BorderPane>
         <!-- ================= Menu latéral ================= -->
         <left>
-            <VBox styleClass="sidebar">
-                <HBox styleClass="brand" alignment="CENTER_LEFT">
+            <VBox fx:id="sidebar" styleClass="sidebar">
+                <HBox fx:id="brand" styleClass="brand" alignment="CENTER_LEFT">
                     <StackPane>
                         <ImageView fx:id="logoImage" fitWidth="38" fitHeight="38" preserveRatio="true" smooth="true"
                                    visible="false" managed="false"/>
                         <Label fx:id="logoFallback" text="FMS" styleClass="brand-logo-fallback"/>
                     </StackPane>
-                    <VBox>
+                    <VBox fx:id="brandText">
                         <Label text="FMS" styleClass="brand-name"/>
                         <Label text="%shell.tagline" styleClass="brand-tagline"/>
                     </VBox>
@@ -48,9 +49,9 @@
                     <VBox fx:id="navBox" styleClass="nav"/>
                 </ScrollPane>
 
-                <HBox styleClass="sidebar-footer" alignment="CENTER_LEFT">
+                <HBox fx:id="sidebarFooter" styleClass="sidebar-footer" alignment="CENTER_LEFT">
                     <Label fx:id="userInitials" styleClass="avatar"/>
-                    <VBox HBox.hgrow="ALWAYS">
+                    <VBox fx:id="userBox" HBox.hgrow="ALWAYS">
                         <Label fx:id="userName" styleClass="user-name"/>
                         <Label fx:id="userRole" styleClass="user-role"/>
                     </VBox>
@@ -67,6 +68,9 @@
             <BorderPane>
                 <top>
                     <HBox styleClass="topbar">
+                        <Button fx:id="sidebarToggle" styleClass="icon-button, sidebar-toggle">
+                            <graphic><FmsIcon fx:id="sidebarToggleIcon" icon="MENU_OPEN" size="20"/></graphic>
+                        </Button>
                         <HBox styleClass="breadcrumb" alignment="CENTER_LEFT" spacing="8">
                             <Label fx:id="breadcrumbSection" styleClass="breadcrumb-section"/>
                             <FmsIcon icon="CHEVRON_RIGHT" size="16" styleClass="breadcrumb-separator"

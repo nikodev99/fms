@@ -5,8 +5,6 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import org.gu.fms.desktop.platform.format.Formats;
 import org.gu.fms.desktop.platform.i18n.Messages;
@@ -66,13 +64,7 @@ public final class MoneyInput extends FormField<Money, MoneyInput> {
     @Override
     protected Region buildEditor() {
         Label suffix = new Label(currency.code());
-        suffix.getStyleClass().add("field-suffix");
-        HBox group = new HBox(field, suffix);
-        group.getStyleClass().add("input-group");
-        group.setAlignment(Pos.CENTER_LEFT);
-        HBox.setHgrow(field, Priority.ALWAYS);
-        field.setMaxWidth(Double.MAX_VALUE);
-        return group;
+        return getRegion(suffix, field);
     }
 
     @Override

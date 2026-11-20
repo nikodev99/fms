@@ -3,9 +3,12 @@ package org.gu.fms.desktop.platform.ui.form;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.*;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import org.gu.fms.desktop.platform.i18n.Messages;
@@ -200,6 +203,16 @@ public abstract class FormField<T, SELF extends FormField<T, SELF>> {
             editor = buildEditor();
         }
         return editor;
+    }
+
+    static Region getRegion(Label suffix, TextField field) {
+        suffix.getStyleClass().add("field-suffix");
+        HBox group = new HBox(field, suffix);
+        group.getStyleClass().add("input-group");
+        group.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(field, Priority.ALWAYS);
+        field.setMaxWidth(Double.MAX_VALUE);
+        return group;
     }
 
     public void requestFocus() {

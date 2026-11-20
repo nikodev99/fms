@@ -3,10 +3,14 @@ package org.gu.fms.desktop.features.vehicle;
 import org.gu.fms.desktop.platform.i18n.Messages;
 import org.gu.fms.desktop.platform.ui.crud.EntityEditor;
 import org.gu.fms.desktop.platform.ui.form.*;
+import org.gu.fms.domain.money.Money;
 import org.gu.fms.domain.vehicle.Vehicle;
+import org.gu.fms.domain.vehicle.Vehicle.AcquisitionMethod;
+import org.gu.fms.domain.vehicle.VehicleCategory;
 import org.gu.fms.domain.vehicle.VehicleRules;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -17,7 +21,9 @@ final class VehicleEditor implements EntityEditor<Vehicle> {
     private final Vehicle existing;
     private final Form form;
     private final TextInput registration;
-    private final ChoiceInput<Vehicle.VehicleCategory> category;
+    private final List<VehicleCategory> categories;
+    private final Money defaultThreshold;
+    private final ChoiceInput<VehicleCategory> category;
     private final TextInput make;
     private final TextInput model;
     private final ChoiceInput<Vehicle.VehicleStatus> status;
@@ -28,9 +34,16 @@ final class VehicleEditor implements EntityEditor<Vehicle> {
     private final MoneyInput repairThreshold;
     private final TextAreaInput notes;
 
-    VehicleEditor(Forms forms, Messages messages, Supplier<LocalDate> today, Vehicle existing) {
+    /**
+     * @param categories       toutes les catégories ; seules les actives (et celle du véhicule) sont proposées
+     * @param defaultThreshold seuil de réparations proposé pour un nouveau véhicule (Paramètres › Flotte), ou null
+     */
+    VehicleEditor(Forms forms, Messages messages, Supplier<LocalDate> today, List<VehicleCategory> categories,
+                  Money defaultThreshold, Vehicle existing) {
         this.messages = messages;
         this.existing = existing;
+        this.categories = categories;
+        this.defaultThreshold = defaultThreshold;
         this.form = forms.create();
 
         form.section(messages.get("vehicle.section.identification"));
@@ -40,7 +53,10 @@ final class VehicleEditor implements EntityEditor<Vehicle> {
                 .onBlur(VehicleRules::normalizeRegistration)
                 .rule(Rules.pattern(REGISTRATION, "vehicle.registration.invalidChars"))
                 .prompt(messages.get("vehicle.registration.prompt"));
-        category = form.choice("category", messages.get("vehicle.category"), Vehicle.VehicleCategory.class).required();
+        category = form.choice("categoryId", messages.get("vehicle.category"),
+                Choices.activePlus(categories, VehicleCategory::active, VehicleCategory::id,
+                        existing == null ? null : existing.categoryId()),
+                VehicleCategory::name).required();
         make = form.text("make", messages.get("vehicle.make")).required().maxLength(VehicleRules.MAKE_MAX);
         model = form.text("model", messages.get("vehicle.model")).required().maxLength(VehicleRules.MODEL_MAX);
         status = form.choice("status", messages.get("vehicle.status"), Vehicle.VehicleStatus.class).required();
@@ -49,7 +65,7 @@ final class VehicleEditor implements EntityEditor<Vehicle> {
         acquisitionDate = form.date("acquisitionDate", messages.get("vehicle.acquisitionDate"))
                 .rule(Rules.notAfter(today));
         acquisitionMethod = form.choice("acquisitionMethod", messages.get("vehicle.acquisitionMethod"),
-                Vehicle.AcquisitionMethod.class).allowEmpty();
+                AcquisitionMethod.class).allowEmpty();
         purchasePrice = form.money("purchasePrice", messages.get("vehicle.purchasePrice"));
 
         form.section(messages.get("vehicle.section.follow"));
@@ -60,6 +76,26 @@ final class VehicleEditor implements EntityEditor<Vehicle> {
         notes = form.textArea("notes", messages.get("vehicle.notes")).maxLength(VehicleRules.NOTES_MAX);
 
         load(existing);
+    }
+
+    private void load(Vehicle v) {
+        if (v == null) {
+            status.setValue(Vehicle.VehicleStatus.ACTIVE);
+            categories.stream().filter(VehicleCategory::active).findFirst().ifPresent(category::setValue);
+            repairThreshold.setValue(defaultThreshold);
+            return;
+        }
+        registration.setValue(v.registration());
+        category.setValue(Choices.byId(categories, VehicleCategory::id, v.categoryId()));
+        make.setValue(v.make());
+        model.setValue(v.model());
+        status.setValue(v.status());
+        acquisitionDate.setValue(v.acquisitionDate());
+        acquisitionMethod.setValue(v.acquisitionMethod());
+        purchasePrice.setValue(v.purchasePrice());
+        currentMileage.setValue(v.currentMileage());
+        repairThreshold.setValue(v.repairThreshold());
+        notes.setValue(v.notes());
     }
 
     @Override
@@ -87,7 +123,7 @@ final class VehicleEditor implements EntityEditor<Vehicle> {
                 registration.getValue(),
                 make.getValue(),
                 model.getValue(),
-                category.getValue(),
+                category.getValue() == null ? null : category.getValue().id(),
                 status.getValue(),
                 acquisitionDate.getValue(),
                 acquisitionMethod.getValue(),
@@ -95,24 +131,5 @@ final class VehicleEditor implements EntityEditor<Vehicle> {
                 currentMileage.getValue(),
                 repairThreshold.getValue(),
                 notes.getValue());
-    }
-
-    private void load(Vehicle v) {
-        if (v == null) {
-            status.setValue(Vehicle.VehicleStatus.ACTIVE);
-            category.setValue(Vehicle.VehicleCategory.TAXI);
-            return;
-        }
-        registration.setValue(v.registration());
-        category.setValue(v.category());
-        make.setValue(v.make());
-        model.setValue(v.model());
-        status.setValue(v.status());
-        acquisitionDate.setValue(v.acquisitionDate());
-        acquisitionMethod.setValue(v.acquisitionMethod());
-        purchasePrice.setValue(v.purchasePrice());
-        currentMileage.setValue(v.currentMileage());
-        repairThreshold.setValue(v.repairThreshold());
-        notes.setValue(v.notes());
     }
 }
