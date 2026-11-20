@@ -14,7 +14,8 @@ import java.util.regex.Pattern;
  * dans le domaine partagé : le service les revérifie avant d'écrire.
  */
 public final class Rules {
-    public Rules() {
+
+    private Rules() {
     }
 
     public static Rule<String> maxLength(int max) {
@@ -27,6 +28,14 @@ public final class Rules {
 
     public static Rule<Money> notNegativeMoney() {
         return v -> v.isNegative() ? Rule.Issue.of("validation.notNegative") : null;
+    }
+
+    public static Rule<Long> positive() {
+        return v -> v <= 0 ? Rule.Issue.of("validation.positive") : null;
+    }
+
+    public static Rule<Long> range(long min, long max) {
+        return v -> v < min || v > max ? Rule.Issue.of("validation.range", min, max) : null;
     }
 
     public static Rule<Long> notNegative() {

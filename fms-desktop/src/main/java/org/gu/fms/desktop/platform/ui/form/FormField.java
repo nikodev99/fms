@@ -3,6 +3,7 @@ package org.gu.fms.desktop.platform.ui.form;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.*;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -19,7 +20,7 @@ import java.util.Objects;
 
 /**
  * Champ de formulaire typé : libellé, éditeur, message d'aide ou d'erreur, règles.
- *
+ * <p>
  * Trois sources d'erreur, par priorité :
  *  1. saisie illisible (ex. « 12a » dans un montant) — détectée par l'éditeur ;
  *  2. obligation et règles du champ — vérifiées à l'écran ;
@@ -29,23 +30,23 @@ import java.util.Objects;
  * @param <SELF> type concret, pour enchaîner les réglages : {@code form.text(…).required().maxLength(20)}
  */
 public abstract class FormField<T, SELF extends FormField<T, SELF>> {
+
     protected final Messages messages;
     private final String name;
     private final String label;
-
     private final ObjectProperty<T> value = new SimpleObjectProperty<>();
     private final StringProperty inputError = new SimpleStringProperty();
     private final StringProperty externalError = new SimpleStringProperty();
     private final StringProperty shownError = new SimpleStringProperty();
     private final List<Rule<? super T>> rules = new ArrayList<>();
     private final ObjectProperty<T> baseline = new SimpleObjectProperty<>();
-
     private BooleanBinding dirty;
     private boolean required;
-    private String help;
+    private final StringProperty help = new SimpleStringProperty();
     private int span = 1;
     private Region editor;
     private VBox cell;
+    private ObservableValue<Boolean> shown;
 
     protected FormField(String name, String label, Messages messages) {
         this.name = Objects.requireNonNull(name, "name");
@@ -70,19 +71,40 @@ public abstract class FormField<T, SELF extends FormField<T, SELF>> {
     }
 
     // ---- Réglages -------------------------------------------------------------------------
+
     public SELF required() {
         this.required = true;
         return self();
     }
 
+    /** Texte d'aide sous le champ ; peut changer après affichage (ex. champ devenu non modifiable). */
     public SELF help(String text) {
-        this.help = text;
+        this.help.set(text);
         return self();
     }
 
     /** Nombre de colonnes occupées (1 ou 2) quand le formulaire est sur deux colonnes. */
     public SELF span(int columns) {
         this.span = Math.max(1, columns);
+        return self();
+    }
+
+    /**
+     * Champ affiché seulement quand la condition est vraie (ex. pourcentage seulement pour un accord au pourcentage).
+     * Un champ masqué garde sa valeur à l'écran ; c'est au domaine d'effacer ce qui ne s'applique pas.
+     */
+    public SELF shownWhen(ObservableValue<Boolean> condition) {
+        this.shown = condition;
+        if (cell != null) {
+            cell.visibleProperty().bind(condition);
+            cell.managedProperty().bind(condition);
+        }
+        return self();
+    }
+
+    /** Lecture seule (ex. code figé après création). */
+    public SELF readOnly(boolean value) {
+        focusTarget().setDisable(value);
         return self();
     }
 
@@ -155,6 +177,7 @@ public abstract class FormField<T, SELF extends FormField<T, SELF>> {
     }
 
     // ---- Validation -------------------------------------------------------------------------
+
     /** Message d'erreur du champ dans son état actuel, ou null s'il est valide. */
     public String validationMessage() {
         if (inputError.get() != null) {
@@ -242,7 +265,8 @@ public abstract class FormField<T, SELF extends FormField<T, SELF>> {
             message.setWrapText(true);
             message.getStyleClass().add("field-message");
             message.textProperty().bind(Bindings.createStringBinding(
-                    () -> shownError.get() != null ? shownError.get() : (help == null ? "" : help), shownError));
+                    () -> shownError.get() != null ? shownError.get() : (help.get() == null ? "" : help.get()),
+                    shownError, help));
             shownError.addListener((obs, o, n) -> {
                 if (n != null) {
                     message.getStyleClass().add("error");
@@ -253,6 +277,10 @@ public abstract class FormField<T, SELF extends FormField<T, SELF>> {
             message.managedProperty().bind(message.textProperty().isNotEmpty());
             message.visibleProperty().bind(message.managedProperty());
             cell.getChildren().add(message);
+            if (shown != null) {
+                cell.visibleProperty().bind(shown);
+                cell.managedProperty().bind(shown);
+            }
         }
         return cell;
     }

@@ -3,6 +3,7 @@ package org.gu.fms.desktop.platform.format;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.gu.fms.desktop.platform.settings.AppSettings;
+import org.gu.fms.domain.common.Percent;
 import org.gu.fms.domain.money.Money;
 import org.gu.fms.domain.money.CurrencyUnit;
 
@@ -17,19 +18,27 @@ import java.time.format.ResolverStyle;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
+/**
+ * Formats d'affichage et de saisie, selon les paramètres régionaux.
+ * Un seul endroit pour les montants, nombres et dates : tous les écrans affichent pareil.
+ * <p>
+ * fr-FR : « 1 250 000 XAF », « 05/11/2026 ». Le séparateur de milliers est une espace insécable fine,
+ * jamais coupée en fin de ligne.
+ */
 @Singleton
 public final class Formats {
+
     private static final Pattern ALL_SPACES = Pattern.compile("[\\s\\u00A0\\u202F]");
 
     private final AppSettings settings;
     private final DateTimeFormatter date;
-    private final DateTimeFormatter datetime;
+    private final DateTimeFormatter dateTime;
 
     @Inject
     public Formats(AppSettings settings) {
         this.settings = settings;
         this.date = DateTimeFormatter.ofPattern("dd/MM/uuuu", settings.locale()).withResolverStyle(ResolverStyle.STRICT);
-        this.datetime = DateTimeFormatter.ofPattern("dd/MM/uuuu HH:mm", settings.locale()).withZone(settings.zone());
+        this.dateTime = DateTimeFormatter.ofPattern("dd/MM/uuuu HH:mm", settings.locale()).withZone(settings.zone());
     }
 
     public CurrencyUnit currency() {
@@ -46,6 +55,15 @@ public final class Formats {
         return value == null ? "" : decimal(value.currency().fractionDigits()).format(value.toMajor());
     }
 
+    /** « 10,03 % » (espace insécable avant %) ; vide si null. */
+    public String percent(Percent value) {
+        if (value == null) {
+            return "";
+        }
+        DecimalFormat f = new DecimalFormat("0.##", DecimalFormatSymbols.getInstance(settings.locale()));
+        return f.format(value.value()) + "\u00A0%";
+    }
+
     public String number(Long value) {
         return value == null ? "" : decimal(0).format(value);
     }
@@ -55,7 +73,7 @@ public final class Formats {
     }
 
     public String dateTime(Instant value) {
-        return value == null ? "" : datetime.format(value);
+        return value == null ? "" : dateTime.format(value);
     }
 
     public DateTimeFormatter dateFormatter() {
@@ -107,5 +125,4 @@ public final class Formats {
         f.setMaximumFractionDigits(fractionDigits);
         return f;
     }
-
 }

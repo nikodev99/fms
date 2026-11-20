@@ -1,5 +1,6 @@
 package org.gu.fms.desktop.platform.db;
 
+import org.gu.fms.domain.common.Percent;
 import org.gu.fms.domain.money.CurrencyUnit;
 import org.gu.fms.domain.money.Money;
 
@@ -13,7 +14,8 @@ import java.time.LocalDate;
  * Conventions de stockage : dates en texte ISO-8601, montants en entiers (unités mineures),
  * énumérations par leur nom.
  */
-public class Row {
+public final class Row {
+
     private final ResultSet rs;
 
     Row(ResultSet rs) {
@@ -38,7 +40,7 @@ public class Row {
     }
 
     public int intValue(String column) throws SQLException {
-        return Math.toIntExact(rs.getLong(column));
+        return Math.toIntExact(longValue(column));
     }
 
     public boolean bool(String column) throws SQLException {
@@ -57,13 +59,25 @@ public class Row {
 
     public <E extends Enum<E>> E enumValue(String column, Class<E> type) throws SQLException {
         String value = rs.getString(column);
-        if (value == null) return null;
+        if (value == null) {
+            return null;
+        }
         try {
             return Enum.valueOf(type, value);
-        }catch(IllegalArgumentException e) {
-            throw new SQLException("Valeur inconnue '" + value + "' pour " + type.getSimpleName()
-                    + " dans la colonne " + column, e);
+        } catch (IllegalArgumentException e) {
+            throw new SQLException("Valeur inconnue '" + value + "' pour " + type.getSimpleName() + " dans la colonne " + column, e);
         }
+    }
+
+    /** Pourcentage stocké en points de base (1 % = 100). */
+    public Percent percent(String column) throws SQLException {
+        Long bp = longOrNull(column);
+        return bp == null ? null : Percent.ofBasisPoints(bp);
+    }
+
+    public Integer intOrNull(String column) throws SQLException {
+        Long value = longOrNull(column);
+        return value == null ? null : Math.toIntExact(value);
     }
 
     public Money money(String column, CurrencyUnit currency) throws SQLException {
