@@ -3,6 +3,7 @@ package org.gu.fms.desktop.app;
 import org.gu.fms.desktop.features.common.ComingSoonScreen;
 import org.gu.fms.desktop.features.dashboard.DashboardScreen;
 import org.gu.fms.desktop.features.driver.DriversModuleScreen;
+import org.gu.fms.desktop.features.maintenance.MaintenanceModuleScreen;
 import org.gu.fms.desktop.features.vehicle.VehicleScreen;
 import org.gu.fms.desktop.platform.ui.icon.AppIcon;
 import org.gu.fms.desktop.platform.ui.nav.Route;
@@ -41,7 +42,7 @@ public class AppRoutes {
 
                 new Route(VEHICLES, "nav.vehicles", AppIcon.VEHICLE, FLEET, VehicleScreen.class),
                 new Route(DRIVERS, "nav.drivers", AppIcon.DRIVERS, FLEET, DriversModuleScreen.class),
-                new Route(MAINTENANCE, "nav.maintenance", AppIcon.MAINTENANCE, FLEET, ComingSoonScreen.class),
+                new Route(MAINTENANCE, "nav.maintenance", AppIcon.MAINTENANCE, FLEET, MaintenanceModuleScreen.class),
 
                 new Route("accounts", "nav.accounts", AppIcon.ACCOUNTS, FINANCE, ComingSoonScreen.class),
                 new Route("payroll", "nav.payroll", AppIcon.PAYROLL, FINANCE, ComingSoonScreen.class),
