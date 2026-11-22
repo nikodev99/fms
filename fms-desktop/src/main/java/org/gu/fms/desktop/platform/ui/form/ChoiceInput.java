@@ -20,7 +20,8 @@ public final class ChoiceInput<T> extends FormField<T, ChoiceInput<T>> {
 
     private final ComboBox<T> combo = new ComboBox<>();
     private final Function<T, String> labeler;
-    private final List<T> options;
+    private List<T> options;
+    private boolean withEmpty;
 
     ChoiceInput(String name, String label, Messages messages, List<T> options, Function<T, String> labeler) {
         super(name, label, messages);
@@ -50,14 +51,31 @@ public final class ChoiceInput<T> extends FormField<T, ChoiceInput<T>> {
 
     /** Ajoute une entrée « — » en tête pour pouvoir vider un champ facultatif. */
     public ChoiceInput<T> allowEmpty() {
-        List<T> withEmpty = new ArrayList<>();
-        withEmpty.add(null);
-        withEmpty.addAll(options);
-        T current = getValue();
-        combo.setItems(FXCollections.observableArrayList(withEmpty));
-        combo.setValue(current);
+        this.withEmpty = true;
+        refreshItems();
         combo.setPromptText(messages.get("common.notSpecified"));
         return this;
+    }
+
+    /**
+     * Remplace la liste (ex. catégories du sens choisi). La valeur courante est gardée si elle figure dans la
+     * nouvelle liste, sinon effacée.
+     */
+    public ChoiceInput<T> setOptions(List<T> newOptions) {
+        this.options = List.copyOf(newOptions);
+        refreshItems();
+        return this;
+    }
+
+    private void refreshItems() {
+        List<T> items = new ArrayList<>();
+        if (withEmpty) {
+            items.add(null);
+        }
+        items.addAll(options);
+        T current = getValue();
+        combo.setItems(FXCollections.observableArrayList(items));
+        combo.setValue(current != null && options.contains(current) ? current : null);
     }
 
     public ChoiceInput<T> prompt(String text) {

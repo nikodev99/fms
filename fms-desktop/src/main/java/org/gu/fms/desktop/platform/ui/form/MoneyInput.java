@@ -5,6 +5,8 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import org.gu.fms.desktop.platform.format.Formats;
 import org.gu.fms.desktop.platform.i18n.Messages;
@@ -19,19 +21,23 @@ import java.util.regex.Pattern;
  * mise en forme « 1 250 000 » quand le champ perd le focus. La devise est affichée en suffixe.
  */
 public final class MoneyInput extends FormField<Money, MoneyInput> {
+
     private static final Pattern ALLOWED = Pattern.compile("[0-9 \\u00A0\\u202F.,]*");
+    private static final Pattern SIGNED = Pattern.compile("-?[0-9 \\u00A0\\u202F.,]*");
 
     private final Formats formats;
     private final CurrencyUnit currency;
     private final TextField field = new TextField();
     private boolean fromText;
+    private boolean negativeAllowed;
 
     MoneyInput(String name, String label, Messages messages, Formats formats) {
         super(name, label, messages);
         this.formats = formats;
         this.currency = formats.currency();
-        rule(Rules.notNegativeMoney());
-        field.setTextFormatter(new TextFormatter<String>(c -> ALLOWED.matcher(c.getControlNewText()).matches() ? c : null));
+        rule(v -> !negativeAllowed && v.isNegative() ? Rule.Issue.of("validation.notNegative") : null);
+        field.setTextFormatter(new TextFormatter<String>(c ->
+                (negativeAllowed ? SIGNED : ALLOWED).matcher(c.getControlNewText()).matches() ? c : null));
         field.setAlignment(Pos.CENTER_RIGHT);
         field.getStyleClass().add("numeric");
 
@@ -56,20 +62,19 @@ public final class MoneyInput extends FormField<Money, MoneyInput> {
         });
     }
 
-    public MoneyInput prompt(String text) {
-        field.setPromptText(text);
+    /** Montant signé (ex. ajustement du brut : prime +, retenue −). */
+    public MoneyInput allowNegative() {
+        this.negativeAllowed = true;
         return this;
     }
 
-    @Override
-    protected Region buildEditor() {
-        Label suffix = new Label(currency.code());
-        return getRegion(suffix, field);
+    public CurrencyUnit currency() {
+        return currency;
     }
 
-    @Override
-    protected Node focusTarget() {
-        return field;
+    public MoneyInput prompt(String text) {
+        field.setPromptText(text);
+        return this;
     }
 
     private void parse(String text) {
@@ -86,5 +91,16 @@ public final class MoneyInput extends FormField<Money, MoneyInput> {
         } finally {
             fromText = false;
         }
+    }
+
+    @Override
+    protected Region buildEditor() {
+        Label suffix = new Label(currency.code());
+        return getRegion(suffix, field);
+    }
+
+    @Override
+    protected Node focusTarget() {
+        return field;
     }
 }

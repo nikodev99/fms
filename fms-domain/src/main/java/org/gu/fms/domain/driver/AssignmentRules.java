@@ -10,7 +10,7 @@ import java.util.Objects;
 
 /**
  * Règles des affectations chauffeur ↔ véhicule.
- *
+ * <p>
  * Conflits interdits (périodes qui se chevauchent, fin vide = sans limite) :
  *  1. deux chauffeurs PRINCIPAUX sur le même véhicule ;
  *  2. un même chauffeur PRINCIPAL sur deux véhicules ;
@@ -37,6 +37,7 @@ public final class AssignmentRules {
         if (a.startDate() != null && a.endDate() != null && a.endDate().isBefore(a.startDate())) {
             errors.add(FieldError.of("endDate", "assignment.endBeforeStart"));
         }
+        TextRules.notNegative(errors, "expectedDaily", a.expectedDaily());
         TextRules.maxLength(errors, "notes", a.notes(), NOTES_MAX);
         return errors;
     }

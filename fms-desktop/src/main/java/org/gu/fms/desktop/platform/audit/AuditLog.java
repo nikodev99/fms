@@ -11,12 +11,13 @@ import java.util.*;
 /**
  * Journal d'audit (instructions §15). Les lignes sont immuables : des déclencheurs SQL refusent
  * toute modification ou suppression de la table {@code audit_log}.
- *
+ * <p>
  * À appeler dans la même transaction que l'écriture tracée : si l'écriture échoue,
  * la trace disparaît avec elle, et inversement.
  */
 @Singleton
 public final class AuditLog {
+
     private final Jdbc jdbc;
     private final Clock clock;
     private final UserSession session;
@@ -45,10 +46,10 @@ public final class AuditLog {
         }
     }
 
-    private void write(String entityType, long entityId, AuditAction action, String changes, String reason) {
-        jdbc.update("INSERT INTO audit_log (occurred_at, user_name, entity_type, entity_id, action, changes, reason)"
-                        + " VALUES (?, ?, ?, ?, ?, ?, ?)",
-                clock.instant(), session.currentUser().displayName(), entityType, entityId, action, changes, reason);
+    /** Opération métier (contre-passation, clôture, validation…) avec ses éléments et le motif éventuel. */
+    public void event(String entityType, long entityId, AuditAction action, Map<String, Object> details,
+                      String reason) {
+        write(entityType, entityId, action, Json.write(details), reason);
     }
 
     static Map<String, Object> diff(Map<String, Object> before, Map<String, Object> after) {
@@ -66,5 +67,11 @@ public final class AuditLog {
             }
         }
         return diff;
+    }
+
+    private void write(String entityType, long entityId, AuditAction action, String changes, String reason) {
+        jdbc.update("INSERT INTO audit_log (occurred_at, user_name, entity_type, entity_id, action, changes, reason)"
+                        + " VALUES (?, ?, ?, ?, ?, ?, ?)",
+                clock.instant(), session.currentUser().displayName(), entityType, entityId, action, changes, reason);
     }
 }

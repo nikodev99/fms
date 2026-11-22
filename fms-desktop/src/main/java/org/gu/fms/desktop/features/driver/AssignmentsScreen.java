@@ -17,7 +17,9 @@ import org.gu.fms.desktop.platform.ui.table.DataTable;
 import org.gu.fms.domain.driver.AssignmentRules;
 import org.gu.fms.domain.driver.Driver;
 import org.gu.fms.domain.driver.DriverAssignment;
+import org.gu.fms.domain.driver.DriverAssignment.AssignmentRole;
 import org.gu.fms.domain.vehicle.Vehicle;
+import org.gu.fms.domain.vehicle.Vehicle.VehicleStatus;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -42,7 +44,8 @@ public final class AssignmentsScreen extends CrudScreen<DriverAssignment> {
     private volatile Map<Long, Vehicle> vehicleById = Map.of();
 
     @Inject
-    public AssignmentsScreen(CrudContext ui, AssignmentService service, DriverRepository drivers, VehicleRepository vehicles, Clock clock, AppSettings settings) {
+    public AssignmentsScreen(CrudContext ui, AssignmentService service, DriverRepository drivers,
+                             VehicleRepository vehicles, Clock clock, AppSettings settings) {
         super(ui, service);
         this.drivers = drivers;
         this.vehicles = vehicles;
@@ -126,10 +129,12 @@ public final class AssignmentsScreen extends CrudScreen<DriverAssignment> {
         table.textColumn(messages.get("assignment.driver"), this::driverName, 180).setMinWidth(130);
         table.textColumn(messages.get("assignment.vehicle"), this::plate, 210).setMinWidth(140);
         table.badgeColumn(messages.get("assignment.role"), a -> new Badge(messages.label(a.role()),
-                a.role() == DriverAssignment.AssignmentRole.PRIMARY ? Tone.INFO : Tone.NEUTRAL), 130);
+                a.role() == AssignmentRole.PRIMARY ? Tone.INFO : Tone.NEUTRAL), 130);
         table.dateColumn(messages.get("assignment.startDate"), DriverAssignment::startDate, 110);
         table.textColumn(messages.get("assignment.endDate"), a -> a.endDate() == null
                 ? messages.get("assignment.endDate.none") : ui.formats().date(a.endDate()), 110);
+        table.moneyColumn(messages.get("assignment.expectedDaily.short"), DriverAssignment::expectedDaily, 120)
+                .setMinWidth(100);
         table.badgeColumn(messages.get("common.state"), this::state, 110);
         table.searchBy(a -> driverName(a) + " " + plate(a) + " " + messages.label(a.role()));
     }
@@ -163,9 +168,10 @@ public final class AssignmentsScreen extends CrudScreen<DriverAssignment> {
         private final Form form;
         private final ChoiceInput<Driver> driver;
         private final ChoiceInput<Vehicle> vehicle;
-        private final ChoiceInput<DriverAssignment.AssignmentRole> role;
+        private final ChoiceInput<AssignmentRole> role;
         private final DateInput start;
         private final DateInput end;
+        private final MoneyInput expected;
         private final TextAreaInput notes;
 
         Editor(Forms forms, Messages messages, DriverAssignment existing, List<Driver> drivers, List<Vehicle> vehicles,
@@ -179,23 +185,32 @@ public final class AssignmentsScreen extends CrudScreen<DriverAssignment> {
                     Choices.activePlus(drivers, d -> d.status().canBeAssigned(), Driver::id, currentDriver),
                     Driver::displayName).required();
             vehicle = form.choice("vehicleId", messages.get("assignment.vehicle"),
-                    Choices.activePlus(vehicles, v -> v.status() != Vehicle.VehicleStatus.SOLD
-                            && v.status() != Vehicle.VehicleStatus.INACTIVE, Vehicle::id, currentVehicle),
+                    Choices.activePlus(vehicles, v -> v.status() != VehicleStatus.SOLD
+                            && v.status() != VehicleStatus.INACTIVE, Vehicle::id, currentVehicle),
                     v -> v.registration() + " — " + v.make() + " " + v.model()).required();
-            role = form.choice("role", messages.get("assignment.role"), DriverAssignment.AssignmentRole.class).required()
+            role = form.choice("role", messages.get("assignment.role"), AssignmentRole.class).required()
                     .help(messages.get("assignment.role.help"));
             start = form.date("startDate", messages.get("assignment.startDate")).required();
             end = form.date("endDate", messages.get("assignment.endDate")).help(messages.get("assignment.endDate.help"));
+            expected = form.money("expectedDaily", messages.get("assignment.expectedDaily"))
+                    .help(messages.get("assignment.expectedDaily.help"));
             notes = form.textArea("notes", messages.get("assignment.notes")).maxLength(AssignmentRules.NOTES_MAX);
             if (existing == null) {
-                role.setValue(DriverAssignment.AssignmentRole.PRIMARY);
+                role.setValue(AssignmentRole.PRIMARY);
                 start.setValue(today);
+                // l'objectif du chauffeur est proposé ; il reste modifiable pour cette affectation
+                driver.valueProperty().addListener((obs, o, d) -> {
+                    if (d != null && (expected.getValue() == null || (o != null && expected.getValue().equals(o.dailyTarget())))) {
+                        expected.setValue(d.dailyTarget());
+                    }
+                });
             } else {
                 driver.setValue(Choices.byId(drivers, Driver::id, existing.driverId())).readOnly(true);
                 vehicle.setValue(Choices.byId(vehicles, Vehicle::id, existing.vehicleId())).readOnly(true);
                 role.setValue(existing.role()).readOnly(true);
                 start.setValue(existing.startDate());
                 end.setValue(existing.endDate());
+                expected.setValue(existing.expectedDaily());
                 notes.setValue(existing.notes());
             }
         }
@@ -220,7 +235,7 @@ public final class AssignmentsScreen extends CrudScreen<DriverAssignment> {
             return new DriverAssignment(existing == null ? null : existing.id(), existing == null ? 0 : existing.version(),
                     driver.getValue() == null ? null : driver.getValue().id(),
                     vehicle.getValue() == null ? null : vehicle.getValue().id(),
-                    role.getValue(), start.getValue(), end.getValue(), notes.getValue());
+                    role.getValue(), start.getValue(), end.getValue(), expected.getValue(), notes.getValue());
         }
     }
 }

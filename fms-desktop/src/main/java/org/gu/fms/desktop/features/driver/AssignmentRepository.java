@@ -5,6 +5,7 @@ import jakarta.inject.Singleton;
 import org.gu.fms.desktop.platform.db.Jdbc;
 import org.gu.fms.desktop.platform.db.RowMapper;
 import org.gu.fms.desktop.platform.repository.JdbcRepository;
+import org.gu.fms.desktop.platform.settings.AppSettings;
 import org.gu.fms.domain.driver.DriverAssignment;
 
 import java.time.Clock;
@@ -16,9 +17,12 @@ import java.util.Map;
 @Singleton
 public final class AssignmentRepository extends JdbcRepository<DriverAssignment> {
 
+    private final AppSettings settings;
+
     @Inject
-    public AssignmentRepository(Jdbc jdbc, Clock clock) {
+    public AssignmentRepository(Jdbc jdbc, Clock clock, AppSettings settings) {
         super(jdbc, clock);
+        this.settings = settings;
     }
 
     @Override
@@ -35,7 +39,7 @@ public final class AssignmentRepository extends JdbcRepository<DriverAssignment>
     protected RowMapper<DriverAssignment> mapper() {
         return row -> new DriverAssignment(row.longValue("id"), row.longValue("version"), row.longValue("driver_id"),
                 row.longValue("vehicle_id"), row.enumValue("role", DriverAssignment.AssignmentRole.class), row.localDate("start_date"),
-                row.localDate("end_date"), row.string("notes"));
+                row.localDate("end_date"), row.money("expected_daily", settings.currency()), row.string("notes"));
     }
 
     @Override
@@ -56,6 +60,7 @@ public final class AssignmentRepository extends JdbcRepository<DriverAssignment>
         m.put("role", a.role());
         m.put("start_date", a.startDate());
         m.put("end_date", a.endDate());
+        m.put("expected_daily", a.expectedDaily());
         m.put("notes", a.notes());
         return m;
     }
@@ -64,6 +69,18 @@ public final class AssignmentRepository extends JdbcRepository<DriverAssignment>
     public List<DriverAssignment> findForDriverOrVehicle(long driverId, long vehicleId) {
         return jdbc.query("SELECT * FROM driver_assignment WHERE driver_id = ? OR vehicle_id = ?", mapper(),
                 driverId, vehicleId);
+    }
+
+    /** Affectations actives à cette date (tous chauffeurs). */
+    public List<DriverAssignment> findActiveOn(LocalDate day) {
+        return jdbc.query("SELECT * FROM driver_assignment WHERE start_date <= ? AND (end_date IS NULL OR end_date >= ?)"
+                + " ORDER BY driver_id, role, id", mapper(), day, day);
+    }
+
+    /** Affectations d'un chauffeur actives à cette date. */
+    public List<DriverAssignment> findActiveForDriver(long driverId, LocalDate day) {
+        return jdbc.query("SELECT * FROM driver_assignment WHERE driver_id = ? AND start_date <= ?"
+                + " AND (end_date IS NULL OR end_date >= ?) ORDER BY role, id", mapper(), driverId, day, day);
     }
 
     /** Affectations non terminées à cette date (en cours ou à venir). */

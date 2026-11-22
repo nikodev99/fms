@@ -6,6 +6,7 @@ import org.gu.fms.desktop.platform.ui.crud.EntityEditor;
 import org.gu.fms.desktop.platform.ui.form.*;
 import org.gu.fms.domain.common.TextRules;
 import org.gu.fms.domain.driver.Driver;
+import org.gu.fms.domain.driver.Driver.DriverStatus;
 import org.gu.fms.domain.driver.DriverRules;
 import org.gu.fms.domain.driver.MaritalStatus;
 import org.gu.fms.domain.driver.PayScheme;
@@ -30,7 +31,7 @@ final class DriverEditor implements EntityEditor<Driver> {
     private final TextInput licenceNumber;
     private final DateInput licenceExpiry;
     private final DateInput hireDate;
-    private final ChoiceInput<Driver.DriverStatus> status;
+    private final ChoiceInput<DriverStatus> status;
     private final ChoiceInput<PayScheme> payScheme;
     private final MoneyInput fixedSalary;
     private final PercentInput commissionRate;
@@ -38,6 +39,7 @@ final class DriverEditor implements EntityEditor<Driver> {
     private final MoneyInput depositAgreed;
     private final CheckInput cnssSubject;
     private final TextInput cnssNumber;
+    private final CheckInput itsSubject;
     private final ChoiceInput<MaritalStatus> maritalStatus;
     private final NumberInput children;
     private final TextAreaInput notes;
@@ -64,7 +66,7 @@ final class DriverEditor implements EntityEditor<Driver> {
 
         form.section(messages.get("driver.section.employment"));
         hireDate = form.date("hireDate", messages.get("driver.hireDate")).rule(Rules.notAfter(today));
-        status = form.choice("status", messages.get("driver.status"), Driver.DriverStatus.class).required()
+        status = form.choice("status", messages.get("driver.status"), DriverStatus.class).required()
                 .help(messages.get("driver.status.help"));
 
         form.section(messages.get("driver.section.pay"));
@@ -86,6 +88,8 @@ final class DriverEditor implements EntityEditor<Driver> {
                 .help(messages.get("driver.cnssSubject.help"));
         cnssNumber = form.text("cnssNumber", messages.get("driver.cnssNumber")).maxLength(DriverRules.CNSS_MAX)
                 .shownWhen(cnssSubject.valueProperty());
+        itsSubject = form.check("itsSubject", messages.get("driver.itsSubject"))
+                .help(messages.get("driver.itsSubject.help"));
         maritalStatus = form.choice("maritalStatus", messages.get("driver.maritalStatus"), MaritalStatus.class)
                 .allowEmpty().help(messages.get("driver.maritalStatus.help"));
         children = form.number("dependentChildren", messages.get("driver.children"))
@@ -97,8 +101,9 @@ final class DriverEditor implements EntityEditor<Driver> {
 
     private void load(Driver d) {
         if (d == null) {
-            status.setValue(Driver.DriverStatus.ACTIVE);
+            status.setValue(DriverStatus.ACTIVE);
             payScheme.setValue(PayScheme.PERCENTAGE);
+            itsSubject.setValue(true);
             return;
         }
         lastName.setValue(d.lastName());
@@ -117,6 +122,7 @@ final class DriverEditor implements EntityEditor<Driver> {
         depositAgreed.setValue(d.depositAgreed());
         cnssSubject.setValue(d.cnssSubject());
         cnssNumber.setValue(d.cnssNumber());
+        itsSubject.setValue(d.itsSubject());
         maritalStatus.setValue(d.maritalStatus());
         children.setValue(d.dependentChildren() == null ? null : (long) d.dependentChildren());
         notes.setValue(d.notes());
@@ -144,7 +150,8 @@ final class DriverEditor implements EntityEditor<Driver> {
                 lastName.getValue(), firstName.getValue(), phone.getValue(), address.getValue(), idNumber.getValue(),
                 licenceNumber.getValue(), licenceExpiry.getValue(), hireDate.getValue(), status.getValue(),
                 payScheme.getValue(), fixedSalary.getValue(), commissionRate.getValue(), dailyTarget.getValue(),
-                depositAgreed.getValue(), cnssSubject.getValue(), cnssNumber.getValue(), maritalStatus.getValue(),
+                depositAgreed.getValue(), cnssSubject.getValue(), cnssNumber.getValue(), itsSubject.getValue(),
+                maritalStatus.getValue(),
                 kids == null ? null : kids.intValue(), notes.getValue());
     }
 }

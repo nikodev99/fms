@@ -7,6 +7,7 @@ import javafx.animation.ScaleTransition;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
@@ -18,6 +19,7 @@ import org.gu.fms.desktop.platform.ui.Tone;
 import org.gu.fms.desktop.platform.ui.icon.AppIcon;
 import org.gu.fms.desktop.platform.ui.icon.FmsIcon;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -26,6 +28,7 @@ import java.util.concurrent.CompletableFuture;
  */
 @Singleton
 public final class Dialogs {
+
     private final OverlayHost host;
     private final Messages messages;
 
@@ -34,21 +37,22 @@ public final class Dialogs {
         this.host = host;
         this.messages = messages;
     }
-    
+
+    /**
+     * Demande de confirmation. Avec la tonalité DANGER, le bouton actif par défaut est « Annuler »,
+     * pour qu'un appui distrait sur Entrée ne déclenche pas une action irréversible.
+     */
     public CompletableFuture<Boolean> confirm(String title, String message, String confirmLabel, Tone tone) {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
-        
         Button cancel = new Button(messages.get("action.cancel"));
         cancel.getStyleClass().add("secondary");
-        
         Button confirm = new Button(confirmLabel);
-        confirm.getStyleClass().add(tone == Tone.DANGER ? "danger": "primary");
+        confirm.getStyleClass().add(tone == Tone.DANGER ? "danger" : "primary");
         if (tone == Tone.DANGER) {
             cancel.setDefaultButton(true);
-        }else {
-            confirm.setDefaultButton(false);
+        } else {
+            confirm.setDefaultButton(true);
         }
-
         StackPane layer = show(tone, title, message, cancel, confirm);
         cancel.setOnAction(e -> close(layer, result, false));
         confirm.setOnAction(e -> close(layer, result, true));
@@ -84,17 +88,61 @@ public final class Dialogs {
         return alert(Tone.DANGER, title, message);
     }
 
+    /**
+     * Confirmation qui exige un motif (annulation, avoir, réouverture…). Renvoie le motif saisi, ou vide si
+     * l'utilisateur renonce. Le bouton de confirmation reste inactif tant que le motif est vide.
+     */
+    public CompletableFuture<Optional<String>> reason(String title, String message, String fieldLabel,
+                                                      String confirmLabel, Tone tone) {
+        CompletableFuture<Optional<String>> result = new CompletableFuture<>();
+        Label caption = new Label(fieldLabel);
+        caption.getStyleClass().add("field-label");
+        TextArea input = new TextArea();
+        input.setPrefRowCount(3);
+        input.setWrapText(true);
+        input.getStyleClass().add("dialog-input");
+        VBox field = new VBox(6, caption, input);
+
+        Button cancel = new Button(messages.get("action.cancel"));
+        cancel.getStyleClass().add("secondary");
+        Button confirm = new Button(confirmLabel);
+        confirm.getStyleClass().add(tone == Tone.DANGER ? "danger" : "primary");
+        confirm.disableProperty().bind(input.textProperty().isEmpty()
+                .or(javafx.beans.binding.Bindings.createBooleanBinding(() -> input.getText().isBlank(),
+                        input.textProperty())));
+        StackPane layer = show(tone, title, message, field, cancel, confirm);
+        cancel.setOnAction(e -> {
+            host.remove(layer);
+            result.complete(Optional.empty());
+        });
+        confirm.setOnAction(e -> {
+            host.remove(layer);
+            result.complete(Optional.of(input.getText().strip()));
+        });
+        layer.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.ESCAPE) {
+                e.consume();
+                host.remove(layer);
+                result.complete(Optional.empty());
+            }
+        });
+        input.requestFocus();
+        return result;
+    }
+
     private StackPane show(Tone tone, String title, String message, Button... buttons) {
+        return show(tone, title, message, null, buttons);
+    }
+
+    private StackPane show(Tone tone, String title, String message, javafx.scene.Node extra, Button... buttons) {
         FmsIcon icon = new FmsIcon(iconFor(tone), 22);
         icon.getStyleClass().add("dialog-icon");
-
         StackPane iconBox = new StackPane(icon);
         iconBox.getStyleClass().addAll("dialog-icon-box", tone.styleClass());
 
         Label titleLabel = new Label(title);
         titleLabel.getStyleClass().add("dialog-title");
         titleLabel.setWrapText(true);
-
         Label messageLabel = new Label(message);
         messageLabel.getStyleClass().add("dialog-message");
         messageLabel.setWrapText(true);
@@ -107,14 +155,17 @@ public final class Dialogs {
         actions.setAlignment(Pos.CENTER_RIGHT);
         actions.getStyleClass().add("dialog-actions");
 
-        VBox card = new VBox(20, top, actions);
+        VBox card = new VBox(20, top);
+        if (extra != null) {
+            card.getChildren().add(extra);
+        }
+        card.getChildren().add(actions);
         card.getStyleClass().add("dialog");
         card.setMaxWidth(460);
         card.setMaxHeight(Region.USE_PREF_SIZE);
 
         Region scrim = new Region();
         scrim.getStyleClass().add("scrim");
-
         StackPane layer = new StackPane(scrim, card);
         layer.getStyleClass().addAll("overlay-layer", "dialog-layer");
         host.push(layer);
@@ -129,7 +180,6 @@ public final class Dialogs {
         scale.setToY(1);
         fade.play();
         scale.play();
-
         return layer;
     }
 
@@ -141,8 +191,8 @@ public final class Dialogs {
     static AppIcon iconFor(Tone tone) {
         return switch (tone) {
             case SUCCESS -> AppIcon.SUCCESS;
-            case DANGER -> AppIcon.ERROR;
             case WARNING -> AppIcon.WARNING;
+            case DANGER -> AppIcon.ERROR;
             case INFO, NEUTRAL -> AppIcon.INFO;
         };
     }

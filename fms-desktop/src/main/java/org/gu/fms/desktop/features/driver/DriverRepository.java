@@ -7,6 +7,7 @@ import org.gu.fms.desktop.platform.db.RowMapper;
 import org.gu.fms.desktop.platform.repository.JdbcRepository;
 import org.gu.fms.desktop.platform.settings.AppSettings;
 import org.gu.fms.domain.driver.Driver;
+import org.gu.fms.domain.driver.Driver.DriverStatus;
 import org.gu.fms.domain.driver.MaritalStatus;
 import org.gu.fms.domain.driver.PayScheme;
 
@@ -48,7 +49,7 @@ public final class DriverRepository extends JdbcRepository<Driver> {
                 row.string("licence_number"),
                 row.localDate("licence_expiry"),
                 row.localDate("hire_date"),
-                row.enumValue("status", Driver.DriverStatus.class),
+                row.enumValue("status", DriverStatus.class),
                 row.enumValue("pay_scheme", PayScheme.class),
                 row.money("fixed_salary", settings.currency()),
                 row.percent("commission_bp"),
@@ -56,6 +57,7 @@ public final class DriverRepository extends JdbcRepository<Driver> {
                 row.money("deposit_agreed", settings.currency()),
                 row.bool("cnss_subject"),
                 row.string("cnss_number"),
+                row.bool("its_subject"),
                 row.enumValue("marital_status", MaritalStatus.class),
                 row.intOrNull("dependent_children"),
                 row.string("notes"));
@@ -90,6 +92,7 @@ public final class DriverRepository extends JdbcRepository<Driver> {
         m.put("deposit_agreed", d.depositAgreed());
         m.put("cnss_subject", d.cnssSubject());
         m.put("cnss_number", d.cnssNumber());
+        m.put("its_subject", d.itsSubject());
         m.put("marital_status", d.maritalStatus());
         m.put("dependent_children", d.dependentChildren());
         m.put("notes", d.notes());

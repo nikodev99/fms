@@ -2,7 +2,12 @@ package org.gu.fms.desktop.app;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import com.google.inject.multibindings.Multibinder;
 import jakarta.inject.Singleton;
+import org.gu.fms.desktop.features.payroll.AdvanceService;
+import org.gu.fms.desktop.features.payroll.PayrollReversalHandler;
+import org.gu.fms.desktop.features.finance.ReversalHandler;
+import org.gu.fms.desktop.features.finance.TransferReversalHandler;
 import org.gu.fms.desktop.platform.backup.BackupLocation;
 import org.gu.fms.desktop.platform.db.Database;
 import org.gu.fms.desktop.platform.db.Jdbc;
@@ -16,7 +21,7 @@ import java.time.Clock;
 
 /**
  * Câblage de l'application (Guice).
- *
+ * <p>
  * Les classes annotées {@code @Singleton} + {@code @Inject} n'ont pas besoin d'être déclarées ici :
  * Guice les construit à la demande. Ne figurent ici que les objets construits à partir de la configuration.
  */
@@ -33,6 +38,12 @@ public final class AppModule extends AbstractModule {
         bind(AppPaths.class).toInstance(paths);
         bind(BackupLocation.class).toInstance(new BackupLocation(paths.backupDirectory()));
         bind(Clock.class).toInstance(Clock.systemUTC());
+
+        // Contre-passation : chaque module déclare le traitement de ses propres écritures.
+        Multibinder<ReversalHandler> reversals = Multibinder.newSetBinder(binder(), ReversalHandler.class);
+        reversals.addBinding().to(TransferReversalHandler.class);
+        reversals.addBinding().to(PayrollReversalHandler.class);
+        reversals.addBinding().to(AdvanceService.class);
     }
 
     @Provides

@@ -67,4 +67,29 @@ public final class CrudContext {
     public UiTasks tasks() {
         return tasks;
     }
+
+    /** Tiroir de saisie générique (formulaire → opération en tâche de fond). */
+    public <R> FormDrawer<R> formDrawer(String title) {
+        return new FormDrawer<>(this, title);
+    }
+
+    /**
+     * Action sans formulaire (avoir, contre-passation, validation…) : exécutée hors du fil JavaFX ; succès → message
+     * puis {@code then} ; échec → erreurs métier dans un dialogue.
+     */
+    public <R> void run(java.util.concurrent.Callable<R> work, java.util.function.Function<R, String> success,
+                        java.util.function.Consumer<R> then) {
+        tasks.job(work)
+                .onSuccess(result -> {
+                    String text = success == null ? null : success.apply(result);
+                    if (text != null) {
+                        toasts.success(text);
+                    }
+                    if (then != null) {
+                        then.accept(result);
+                    }
+                })
+                .onFailure(error -> ErrorReporter.report(this, error, null, "action.failed.title"))
+                .start();
+    }
 }

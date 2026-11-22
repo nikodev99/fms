@@ -1,5 +1,7 @@
 package org.gu.fms.domain.driver;
 
+import org.gu.fms.domain.money.Money;
+
 import java.time.LocalDate;
 
 /**
@@ -19,6 +21,7 @@ public record DriverAssignment(
         AssignmentRole role,
         LocalDate startDate,
         LocalDate endDate,
+        Money expectedDaily,
         String notes) {
 
     public boolean isNew() {
@@ -30,12 +33,19 @@ public record DriverAssignment(
         return startDate != null && !day.isBefore(startDate) && (endDate == null || !day.isAfter(endDate));
     }
 
+    /** Montant attendu pour un jour d'activité (zéro si aucun). */
+    public long expectedMinor() {
+        return expectedDaily == null ? 0 : expectedDaily.minor();
+    }
+
     public DriverAssignment withIdentity(long newId, long newVersion) {
-        return new DriverAssignment(newId, newVersion, driverId, vehicleId, role, startDate, endDate, notes);
+        return new DriverAssignment(newId, newVersion, driverId, vehicleId, role, startDate, endDate, expectedDaily,
+                notes);
     }
 
     public DriverAssignment withNotes(String newNotes) {
-        return new DriverAssignment(id, version, driverId, vehicleId, role, startDate, endDate, newNotes);
+        return new DriverAssignment(id, version, driverId, vehicleId, role, startDate, endDate, expectedDaily,
+                newNotes);
     }
 
     /**

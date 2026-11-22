@@ -43,13 +43,14 @@ import java.util.stream.Collectors;
  * @param <T> entité du domaine
  */
 public abstract class CrudScreen<T> implements Screen, Screen.Embeddable {
+
     protected final CrudContext ui;
     protected final Messages messages;
     private final CrudService<T> service;
     private final BooleanProperty loading = new SimpleBooleanProperty();
     private DataTable<T> table;
     private Node view;
-    private Drawer drawer;
+    private FormDrawer<T> drawer;
     private EntityEditor<T> editor;
     private boolean embedded;
 
@@ -113,6 +114,44 @@ public abstract class CrudScreen<T> implements Screen, Screen.Embeddable {
         return null;
     }
 
+    /**
+     * Lecture de la liste, HORS du fil JavaFX (après {@link #prepare()}). Par défaut toute la liste du service ;
+     * un écran filtré par période la redéfinit.
+     */
+    protected List<T> load() {
+        return service.findAll();
+    }
+
+    /** Appelé sur le fil JavaFX après chaque chargement (ex. mise à jour des totaux affichés). */
+    protected void loaded(List<T> items) {
+    }
+
+    /** Bloc affiché entre l'en-tête et la recherche (ex. chiffres clés) ; facultatif. */
+    protected Node summary() {
+        return null;
+    }
+
+    /** Boutons secondaires de l'en-tête, à gauche de l'action principale (ex. « Valider le point »). */
+    protected List<Button> headerActions() {
+        return List.of();
+    }
+
+    /**
+     * Boutons à gauche du pied du tiroir d'un enregistrement existant (ex. « Émettre un avoir », « Contre-passer »).
+     * Un bouton qui enchaîne sur une autre opération appelle d'abord {@link #closeEditor()}.
+     */
+    protected List<Button> editorActions(T existing) {
+        return List.of();
+    }
+
+    /**
+     * Confirmation éventuelle avant l'enregistrement (formulaire déjà valide), ex. doublon probable.
+     * Sur le fil JavaFX ; vrai = enregistrer.
+     */
+    protected CompletableFuture<Boolean> beforeSave(T entity, boolean creating) {
+        return CompletableFuture.completedFuture(true);
+    }
+
     @Override
     public void embed() {
         this.embedded = true;
@@ -135,7 +174,17 @@ public abstract class CrudScreen<T> implements Screen, Screen.Embeddable {
 
     @Override
     public CompletableFuture<Boolean> confirmLeave() {
+        return closeEditor();
+    }
+
+    /** Ferme le tiroir ouvert (avec confirmation si le formulaire est modifié) ; vrai s'il est fermé. */
+    protected final CompletableFuture<Boolean> closeEditor() {
         return drawer != null && drawer.isOpen() ? drawer.requestClose() : CompletableFuture.completedFuture(true);
+    }
+
+    /** Recharge la liste en gardant la sélection courante. */
+    protected final void refresh() {
+        reload(null);
     }
 
     protected final DataTable<T> table() {
@@ -180,7 +229,12 @@ public abstract class CrudScreen<T> implements Screen, Screen.Embeddable {
         create.setManaged(canCreate());
         create.setMinWidth(Region.USE_PREF_SIZE);          // le bouton garde son libellé complet ; le texte d'aide se replie
 
-        HBox header = new HBox(12, titles, grow(), spinner, create);
+        HBox header = new HBox(12, titles, grow(), spinner);
+        for (Button b : headerActions()) {
+            b.setMinWidth(Region.USE_PREF_SIZE);
+            header.getChildren().add(b);
+        }
+        header.getChildren().add(create);
         header.getStyleClass().add("page-header");
         header.setAlignment(Pos.CENTER_LEFT);
 
@@ -212,7 +266,12 @@ public abstract class CrudScreen<T> implements Screen, Screen.Embeddable {
         VBox.setVgrow(table, Priority.ALWAYS);
         VBox.setVgrow(panel, Priority.ALWAYS);
 
-        VBox page = new VBox(16, header, toolbar, panel);
+        VBox page = new VBox(16, header);
+        Node top = summary();
+        if (top != null) {
+            page.getChildren().add(top);
+        }
+        page.getChildren().addAll(toolbar, panel);
         if (embedded) {
             page.getStyleClass().add("section-page");
         } else {
@@ -249,7 +308,7 @@ public abstract class CrudScreen<T> implements Screen, Screen.Embeddable {
     protected final void reload(Predicate<T> select) {
         ui.tasks.job(() -> {
                     prepare();
-                    return service.findAll();
+                    return load();
                 })
                 .busy(loading)
                 .onSuccess(items -> {
@@ -257,6 +316,7 @@ public abstract class CrudScreen<T> implements Screen, Screen.Embeddable {
                     if (select != null) {
                         table.selectFirst(select);
                     }
+                    loaded(items);
                 })
                 .start();
     }
@@ -274,68 +334,36 @@ public abstract class CrudScreen<T> implements Screen, Screen.Embeddable {
         if (current == null) {
             return;
         }
-        current.form().markClean();
         this.editor = current;
-
-        Button cancel = new Button(messages.get("action.cancel"));
-        cancel.getStyleClass().add("secondary");
-        Button save = new Button(messages.get("action.save"), new FmsIcon(AppIcon.SAVE, 16));
-        save.getStyleClass().add("primary");
-        save.setDefaultButton(true);
-
-        Drawer d = ui.drawers.create(current.title())
+        boolean creating = existing == null;
+        FormDrawer<T> d = ui.<T>formDrawer(current.title())
                 .subtitle(current.subtitle())
-                .content(current.form().view())
-                .actions(cancel, save)
-                .beforeClose(() -> confirmDiscard(current));
-        save.disableProperty().bind(d.busyProperty());
-        cancel.disableProperty().bind(d.busyProperty());
-        cancel.setOnAction(e -> d.requestClose());
-        save.setOnAction(e -> save(current, d, existing == null));
-        this.drawer = d;
-        d.open();
-        current.form().focusFirst();
-    }
-
-    private CompletableFuture<Boolean> confirmDiscard(EntityEditor<T> current) {
-        if (!current.form().isDirty()) {
-            return CompletableFuture.completedFuture(true);
+                .form(current.form());
+        Node top = current.header();
+        if (top != null) {
+            d.header(top);
         }
-        return ui.dialogs.confirm(messages.get("crud.discard.title"), messages.get("crud.discard.text"),
-                messages.get("crud.discard.confirm"), Tone.WARNING);
-    }
-
-    private void save(EntityEditor<T> current, Drawer d, boolean creating) {
-        if (!current.form().validate()) {
-            return;
+        if (existing != null) {
+            editorActions(existing).forEach(d::leftAction);
         }
-        T entity = current.toEntity();
-        ui.tasks.job(() -> service.save(entity))
-                .busy(d.busyProperty())
+        if (current.readOnly()) {
+            d.readOnly();
+        }
+        if (current.saveLabel() != null) {
+            d.saveLabel(current.saveLabel(), AppIcon.SAVE);
+        }
+        d.beforeSave(() -> beforeSave(current.toEntity(), creating));
+        d.onSave(() -> {
+                    T entity = current.toEntity();
+                    return () -> service.save(entity);
+                })
                 .onSuccess(saved -> {
-                    current.form().markClean();
-                    d.close();
                     ui.toasts.success(savedMessage(saved, creating));
                     Object id = identityOf(saved);
                     reload(item -> identityOf(item).equals(id));
-                })
-                .onFailure(error -> handleSaveError(current, error))
-                .start();
-    }
-
-    private void handleSaveError(EntityEditor<T> current, Throwable error) {
-        if (error instanceof ValidationException ve) {
-            List<FieldError> unmatched = current.form().applyErrors(ve.errors());
-            if (!unmatched.isEmpty()) {
-                ui.dialogs.error(messages.get("crud.invalid.title"),
-                        unmatched.stream().map(messages::error).collect(Collectors.joining("\n")));
-            }
-        } else if (error instanceof StaleDataException) {
-            ui.dialogs.error(messages.get("crud.stale.title"), messages.get("crud.stale.text"));
-        } else {
-            System.getLogger(getClass().getName()).log(System.Logger.Level.ERROR, "Enregistrement impossible", error);
-            ui.dialogs.error(messages.get("crud.failed.title"), messages.get("crud.failed.text"));
-        }
+                });
+        this.drawer = d;
+        d.open();
     }
 
     /** Éditeur ouvert (pour les tests et les sous-classes). */

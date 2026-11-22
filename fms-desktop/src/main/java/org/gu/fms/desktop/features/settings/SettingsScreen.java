@@ -7,6 +7,7 @@ import org.gu.fms.desktop.features.document.DocumentTypesScreen;
 import org.gu.fms.desktop.features.maintenance.MaintenanceTypesScreen;
 import org.gu.fms.desktop.features.payroll.ContributionsScreen;
 import org.gu.fms.desktop.features.payroll.ItsSection;
+import org.gu.fms.desktop.features.payroll.RecoverySection;
 import org.gu.fms.desktop.features.vehicle.VehicleCategoriesScreen;
 import org.gu.fms.desktop.platform.i18n.Messages;
 import org.gu.fms.desktop.platform.ui.icon.AppIcon;
@@ -48,6 +49,7 @@ public final class SettingsScreen extends SectionedScreen {
                 new Section(FLEET, "settings.fleetDefaults", AppIcon.DEFAULTS, FleetDefaultsSection.class),
                 new Section(PAYROLL, "settings.contributions", AppIcon.CONTRIBUTIONS, ContributionsScreen.class),
                 new Section(PAYROLL, "settings.its", AppIcon.TAX, ItsSection.class),
+                new Section(PAYROLL, "settings.recoveries", AppIcon.ADVANCE, RecoverySection.class),
                 new Section(PAYROLL, "settings.provisions", AppIcon.PROVISIONS, AllocationRulesScreen.class),
                 new Section(DATA, "settings.backup", AppIcon.BACKUP_RESTORE, BackupScreen.class));
     }

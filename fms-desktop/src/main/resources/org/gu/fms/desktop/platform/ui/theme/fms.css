@@ -710,3 +710,22 @@
     -fx-background-radius: 4;
     -fx-font-size: 12px;
 }
+
+/* ---- Trésorerie, versements, paie -------------------------------------------------------------------------- */
+/* Valeurs colorées selon leur sens (indicateurs, listes de détail) */
+.kpi-value.tone-success, .balance-value.tone-success { -fx-text-fill: -fms-success; }
+.kpi-value.tone-warning, .balance-value.tone-warning { -fx-text-fill: -fms-warning; }
+.kpi-value.tone-danger, .balance-value.tone-danger { -fx-text-fill: -fms-danger; }
+.kpi-value.tone-info, .balance-value.tone-info { -fx-text-fill: -fms-info; }
+
+/* Détail en lecture seule dans un tiroir */
+.detail-list .panel-body { -fx-padding: 2 16 4 16; }
+.detail-list .balance-value { -fx-font-weight: normal; -fx-text-alignment: right; }
+.detail-list .balance-total .balance-value { -fx-font-weight: bold; }
+
+/* Filtres de période */
+.day-picker .date-picker { -fx-pref-width: 150; }
+.filter-month { -fx-pref-width: 170; }
+
+/* Motif saisi dans un dialogue */
+.dialog-input { -fx-pref-height: 84; }

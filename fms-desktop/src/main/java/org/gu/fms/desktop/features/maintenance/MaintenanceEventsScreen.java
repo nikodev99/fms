@@ -2,6 +2,8 @@ package org.gu.fms.desktop.features.maintenance;
 
 import jakarta.inject.Inject;
 import javafx.beans.binding.Bindings;
+import javafx.scene.control.Button;
+import org.gu.fms.desktop.features.finance.AccountRepository;
 import org.gu.fms.desktop.features.vehicle.VehicleRepository;
 import org.gu.fms.desktop.platform.i18n.Messages;
 import org.gu.fms.desktop.platform.settings.AppSettings;
@@ -11,13 +13,18 @@ import org.gu.fms.desktop.platform.ui.crud.CrudScreen;
 import org.gu.fms.desktop.platform.ui.crud.EntityEditor;
 import org.gu.fms.desktop.platform.ui.form.*;
 import org.gu.fms.desktop.platform.ui.icon.AppIcon;
+import org.gu.fms.desktop.platform.ui.icon.FmsIcon;
 import org.gu.fms.desktop.platform.ui.table.Badge;
 import org.gu.fms.desktop.platform.ui.table.DataTable;
+import org.gu.fms.domain.finance.FinancialAccount;
+import org.gu.fms.domain.finance.FinancialTransaction;
+import org.gu.fms.domain.finance.TransactionRules;
 import org.gu.fms.domain.maintenance.MaintenanceEvent;
 import org.gu.fms.domain.maintenance.MaintenanceEvent.MaintenanceEventStatus;
 import org.gu.fms.domain.maintenance.MaintenanceEvent.MaintenanceKind;
 import org.gu.fms.domain.maintenance.MaintenanceEventRules;
 import org.gu.fms.domain.maintenance.MaintenanceType;
+import org.gu.fms.domain.money.Money;
 import org.gu.fms.domain.vehicle.Vehicle;
 import org.gu.fms.domain.vehicle.Vehicle.VehicleStatus;
 
@@ -39,16 +46,24 @@ public final class MaintenanceEventsScreen extends CrudScreen<MaintenanceEvent> 
     private final AppSettings settings;
     private final VehicleRepository vehicles;
     private final MaintenanceTypeRepository types;
+    private final MaintenancePaymentService payments;
+    private final AccountRepository accounts;
+    private volatile Map<Long, Long> paid = Map.of();
+    private volatile List<FinancialAccount> accountList = List.of();
     private volatile List<Vehicle> vehicleList = List.of();
     private volatile List<MaintenanceType> typeList = List.of();
     private volatile Map<Long, Vehicle> vehicleById = Map.of();
     private volatile Map<Long, MaintenanceType> typeById = Map.of();
 
     @Inject
-    public MaintenanceEventsScreen(CrudContext ui, MaintenanceEventService service, VehicleRepository vehicles, MaintenanceTypeRepository types, Clock clock, AppSettings settings) {
+    public MaintenanceEventsScreen(CrudContext ui, MaintenanceEventService service, VehicleRepository vehicles,
+                                   MaintenanceTypeRepository types, MaintenancePaymentService payments,
+                                   AccountRepository accounts, Clock clock, AppSettings settings) {
         super(ui, service);
         this.vehicles = vehicles;
         this.types = types;
+        this.payments = payments;
+        this.accounts = accounts;
         this.clock = clock;
         this.settings = settings;
     }
@@ -65,6 +80,75 @@ public final class MaintenanceEventsScreen extends CrudScreen<MaintenanceEvent> 
         typeById = t.stream().collect(Collectors.toMap(MaintenanceType::id, Function.identity()));
         vehicleList = v;
         typeList = t;
+        paid = payments.paidByEvent();
+        accountList = accounts.findActive();
+    }
+
+    private Money paidAmount(MaintenanceEvent e) {
+        return Money.of(paid.getOrDefault(e.id(), 0L), e.cost().currency());
+    }
+
+    private Badge payment(MaintenanceEvent e) {
+        if (e.status() == MaintenanceEventStatus.CANCELLED || e.cost().isZero()) {
+            return null;
+        }
+        Money p = paidAmount(e);
+        if (p.compareTo(e.cost()) >= 0) {
+            return new Badge(messages.get("event.payment.paid"), Tone.SUCCESS);
+        }
+        return p.isZero() ? new Badge(messages.get("event.payment.unpaid"), Tone.WARNING)
+                : new Badge(messages.get("event.payment.partial"), Tone.INFO);
+    }
+
+    @Override
+    protected List<Button> editorActions(MaintenanceEvent e) {
+        if (e.status() != MaintenanceEventStatus.RECORDED || paidAmount(e).compareTo(e.cost()) >= 0) {
+            return List.of();
+        }
+        Button pay = new Button(messages.get("event.pay"), new FmsIcon(AppIcon.PAY, 16));
+        pay.getStyleClass().add("secondary");
+        pay.setOnAction(a -> closeEditor().thenAccept(closed -> {
+            if (closed) {
+                openPayment(e);
+            }
+        }));
+        return List.of(pay);
+    }
+
+    private void openPayment(MaintenanceEvent e) {
+        Money remaining = e.cost().minus(paidAmount(e));
+        Form form = ui.forms().create();
+        LocalDate today = today();
+        ChoiceInput<FinancialAccount> account = form.choice("accountId", messages.get("event.payment.account"),
+                accountList, FinancialAccount::name).required();
+        DateInput date = form.date("date", messages.get("event.payment.date")).required()
+                .rule(Rules.notAfter(() -> today));
+        MoneyInput amount = form.money("amount", messages.get("event.payment.amount")).required()
+                .rule(Rules.that(Money::isPositive, "validation.positive"))
+                .help(messages.get("event.payment.remaining", ui.formats().money(remaining)));
+        TextInput reference = form.text("reference", messages.get("event.payment.reference"))
+                .maxLength(TransactionRules.REFERENCE_MAX);
+        date.setValue(today);
+        amount.setValue(remaining);
+        if (!accountList.isEmpty()) {
+            account.setValue(accountList.get(0));
+        }
+        ui.<FinancialTransaction>formDrawer(messages.get("event.pay"))
+                .subtitle(plate(e) + " — " + typeName(e))
+                .form(form)
+                .saveLabel(messages.get("event.pay"), AppIcon.PAY)
+                .onSave(() -> {
+                    Long a = account.getValue() == null ? null : account.getValue().id();
+                    LocalDate d = date.getValue();
+                    Money m = amount.getValue();
+                    String ref = reference.getValue();
+                    return () -> payments.pay(e.id(), a, d, m, ref);
+                })
+                .onSuccess(t -> {
+                    ui.toasts().success(messages.get("event.paid", ui.formats().money(t.amount())));
+                    refresh();
+                })
+                .open();
     }
 
     private String plate(MaintenanceEvent e) {
@@ -123,6 +207,7 @@ public final class MaintenanceEventsScreen extends CrudScreen<MaintenanceEvent> 
         table.textColumn(messages.get("event.supplier.short"), MaintenanceEvent::supplier, 160).setMinWidth(130);
         table.numberColumn(messages.get("event.mileage.short"), MaintenanceEvent::mileage, messages.get("unit.km"), 100);
         table.moneyColumn(messages.get("event.cost"), MaintenanceEvent::cost, 120);
+        table.badgeColumn(messages.get("event.payment"), this::payment, 110);
         table.badgeColumn(messages.get("common.state"), e -> e.status() == MaintenanceEventStatus.CANCELLED
                 ? new Badge(messages.label(e.status()), Tone.DANGER)
                 : new Badge(messages.label(e.status()), Tone.SUCCESS), 110);

@@ -8,7 +8,7 @@ import java.util.Objects;
 
 /**
  * Chauffeur (instructions §4.2) et accord de rémunération (§4.7).
- *
+ * <p>
  * Ne contient que l'ACCORD : montants convenus, jamais de soldes. Les avances en cours, manquants cumulés,
  * dettes et caution effectivement versée seront CALCULÉS par les modules Versements et Paie à partir
  * de leurs mouvements ; ils ne sont jamais saisis ici.
@@ -36,6 +36,7 @@ public record Driver(
         Money depositAgreed,
         boolean cnssSubject,
         String cnssNumber,
+        boolean itsSubject,
         MaritalStatus maritalStatus,
         Integer dependentChildren,
         String notes) {
@@ -59,20 +60,20 @@ public record Driver(
     public Driver withIdentity(long newId, long newVersion) {
         return new Driver(newId, newVersion, lastName, firstName, phone, address, idNumber, licenceNumber,
                 licenceExpiry, hireDate, status, payScheme, fixedSalary, commissionRate, dailyTarget, depositAgreed,
-                cnssSubject, cnssNumber, maritalStatus, dependentChildren, notes);
+                cnssSubject, cnssNumber, itsSubject, maritalStatus, dependentChildren, notes);
     }
 
     public Driver withStatus(DriverStatus newStatus) {
         return new Driver(id, version, lastName, firstName, phone, address, idNumber, licenceNumber,
                 licenceExpiry, hireDate, newStatus, payScheme, fixedSalary, commissionRate, dailyTarget, depositAgreed,
-                cnssSubject, cnssNumber, maritalStatus, dependentChildren, notes);
+                cnssSubject, cnssNumber, itsSubject, maritalStatus, dependentChildren, notes);
     }
 
     /** Copie normalisée (voir {@link DriverRules#normalize(Driver)}). */
     Driver normalized(String nLast, String nFirst, String nPhone, String nAddress, String nId, String nLicence,
                       Money nFixed, Percent nRate, String nCnss, String nNotes) {
         return new Driver(id, version, nLast, nFirst, nPhone, nAddress, nId, nLicence, licenceExpiry, hireDate,
-                status, payScheme, nFixed, nRate, dailyTarget, depositAgreed, cnssSubject, nCnss, maritalStatus,
+                status, payScheme, nFixed, nRate, dailyTarget, depositAgreed, cnssSubject, nCnss, itsSubject, maritalStatus,
                 dependentChildren, nNotes);
     }
 

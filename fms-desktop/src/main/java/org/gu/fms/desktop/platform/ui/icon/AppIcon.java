@@ -5,13 +5,13 @@ import org.kordamp.ikonli.materialdesign2.*;
 
 /**
  * Catalogue des icônes de l'application, par rôle et non par dessin.
- * <p>
+ *
  * Les écrans utilisent toujours ces noms ({@code AppIcon.VEHICLE}), jamais un code Ikonli direct :
  * changer de jeu d'icônes ou de dessin se fait ici, une seule fois.
  * Jeu utilisé : Material Design Icons (Ikonli, pack materialdesign2).
  */
 public enum AppIcon {
-    //Navigation
+    // Navigation
     DASHBOARD(MaterialDesignV.VIEW_DASHBOARD_OUTLINE),
     CASH_REGISTER(MaterialDesignC.CASH_REGISTER),
     COLLECTIONS(MaterialDesignC.CASH_MULTIPLE),
@@ -37,6 +37,19 @@ public enum AppIcon {
     LOGOUT(MaterialDesignL.LOGOUT),
     OPEN_CASH(MaterialDesignL.LOCK_OPEN_VARIANT_OUTLINE),
     CHEVRON_RIGHT(MaterialDesignC.CHEVRON_RIGHT),
+    CHEVRON_LEFT(MaterialDesignC.CHEVRON_LEFT),
+    REVERSE(MaterialDesignU.UNDO_VARIANT),
+    CREDIT_NOTE(MaterialDesignR.RECEIPT_TEXT_MINUS_OUTLINE),
+    VALIDATE(MaterialDesignC.CHECK_ALL),
+    PAY(MaterialDesignC.CASH_CHECK),
+    CANCEL(MaterialDesignC.CANCEL),
+    TRANSFER(MaterialDesignB.BANK_TRANSFER),
+    LOCK(MaterialDesignL.LOCK_OUTLINE),
+    UNLOCK(MaterialDesignL.LOCK_OPEN_OUTLINE),
+    CALCULATE(MaterialDesignC.CALCULATOR),
+    ADVANCE(MaterialDesignH.HAND_COIN_OUTLINE),
+    LEDGER(MaterialDesignB.BOOK_OPEN_PAGE_VARIANT_OUTLINE),
+    POINT(MaterialDesignC.CLIPBOARD_CHECK_OUTLINE),
     MENU(MaterialDesignM.MENU),
     MENU_OPEN(MaterialDesignM.MENU_OPEN),
     FOLDER_OPEN(MaterialDesignF.FOLDER_OPEN_OUTLINE),
@@ -74,8 +87,7 @@ public enum AppIcon {
     ERROR(MaterialDesignA.ALERT_CIRCLE_OUTLINE),
     UNDER_CONSTRUCTION(MaterialDesignH.HAMMER_WRENCH),
     DATABASE(MaterialDesignD.DATABASE_OUTLINE),
-    ARCHIVE(MaterialDesignA.ARCHIVE_OUTLINE)
-    ;
+    ARCHIVE(MaterialDesignA.ARCHIVE_OUTLINE);
 
     private final Ikon ikon;
 

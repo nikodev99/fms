@@ -2,12 +2,14 @@ package org.gu.fms.desktop.features.maintenance;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.gu.fms.desktop.features.finance.TransactionRepository;
 import org.gu.fms.desktop.features.vehicle.VehicleRepository;
 import org.gu.fms.desktop.platform.audit.AuditLog;
 import org.gu.fms.desktop.platform.db.TransactionManager;
 import org.gu.fms.desktop.platform.services.AuditedCrudService;
 import org.gu.fms.desktop.platform.settings.AppSettings;
 import org.gu.fms.domain.common.FieldError;
+import org.gu.fms.domain.finance.TransactionSource;
 import org.gu.fms.domain.maintenance.MaintenanceEvent;
 import org.gu.fms.domain.maintenance.MaintenanceEventRules;
 import org.gu.fms.domain.maintenance.MaintenanceType;
@@ -34,14 +36,16 @@ public final class MaintenanceEventService extends AuditedCrudService<Maintenanc
 
     private final VehicleRepository vehicles;
     private final MaintenanceTypeRepository types;
+    private final TransactionRepository transactions;
 
     @Inject
     public MaintenanceEventService(MaintenanceEventRepository repository, VehicleRepository vehicles,
-                                   MaintenanceTypeRepository types, TransactionManager tx, AuditLog audit, Clock clock,
-                                   AppSettings settings) {
+                                   MaintenanceTypeRepository types, TransactionRepository transactions,
+                                   TransactionManager tx, AuditLog audit, Clock clock, AppSettings settings) {
         super(repository, tx, audit, clock, settings);
         this.vehicles = vehicles;
         this.types = types;
+        this.transactions = transactions;
     }
 
     @Override
@@ -63,6 +67,12 @@ public final class MaintenanceEventService extends AuditedCrudService<Maintenanc
     protected void check(MaintenanceEvent e, MaintenanceEvent before, List<FieldError> errors) {
         if (before != null) {
             errors.addAll(MaintenanceEventRules.validateChange(before, e));
+            long paid = transactions.paidFor(TransactionSource.MAINTENANCE, before.id());
+            if (paid > 0 && !e.counts()) {
+                errors.add(FieldError.of("status", "maintenance.event.cancelPaid"));
+            } else if (paid > 0 && e.cost() != null && e.cost().minor() < paid) {
+                errors.add(FieldError.of("cost", "maintenance.event.costBelowPaid"));
+            }
         }
         if (e.vehicleId() != null && vehicles.findById(e.vehicleId()).isEmpty()) {
             errors.add(FieldError.of("vehicleId", "maintenance.vehicle.unknown"));
