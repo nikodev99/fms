@@ -1,10 +1,13 @@
 package org.gu.fms.desktop.testing;
 
+import org.gu.fms.desktop.features.allocation.AllocationRuleRepository;
+import org.gu.fms.desktop.features.allocation.AllocationRuleService;
 import org.gu.fms.desktop.features.driver.AssignmentRepository;
 import org.gu.fms.desktop.features.driver.AssignmentService;
 import org.gu.fms.desktop.features.driver.DriverRepository;
 import org.gu.fms.desktop.features.driver.DriverService;
 import org.gu.fms.desktop.features.maintenance.*;
+import org.gu.fms.desktop.features.payroll.*;
 import org.gu.fms.desktop.features.settings.FleetPreferencesService;
 import org.gu.fms.desktop.features.vehicle.VehicleCategoryRepository;
 import org.gu.fms.desktop.features.vehicle.VehicleCategoryService;
@@ -50,10 +53,10 @@ public final class Fixture implements AutoCloseable {
     public final MaintenancePlanService plans;
     public final FleetPreferencesService fleetPrefs;
     public final RepairThresholdService repairs;
-    //public final PayrollContributionService contributions;
-    //public final ItsBandService itsBands;
-    //public final ItsSettingsService itsSettings;
-    //public final AllocationRuleService allocations;
+    public final PayrollContributionService contributions;
+    public final ItsBandService itsBands;
+    public final ItsSettingsService itsSettings;
+    public final AllocationRuleService allocations;
 
     public Fixture(Path dir) throws Exception {
         db = TestDatabase.migrated(dir);
@@ -75,10 +78,10 @@ public final class Fixture implements AutoCloseable {
         plans = new MaintenancePlanService(planRepo, vehicleRepo, typeRepo, db.tx, audit, CLOCK, SETTINGS);
         fleetPrefs = new FleetPreferencesService(settingsStore, SETTINGS);
         repairs = new RepairThresholdService(vehicleRepo, eventRepo, fleetPrefs, SETTINGS);
-        //contributions = new PayrollContributionService(new PayrollContributionRepository(db.jdbc, CLOCK, SETTINGS), db.tx, audit, CLOCK, SETTINGS);
-        //itsBands = new ItsBandService(new ItsBandRepository(db.jdbc, CLOCK, SETTINGS), db.tx, audit, CLOCK, SETTINGS);
-        //itsSettings = new ItsSettingsService(settingsStore, SETTINGS);
-        //allocations = new AllocationRuleService(new AllocationRuleRepository(db.jdbc, CLOCK, SETTINGS), db.tx, audit, CLOCK, SETTINGS);
+        contributions = new PayrollContributionService(new PayrollContributionRepository(db.jdbc, CLOCK, SETTINGS), db.tx, audit, CLOCK, SETTINGS);
+        itsBands = new ItsBandService(new ItsBandRepository(db.jdbc, CLOCK, SETTINGS), db.tx, audit, CLOCK, SETTINGS);
+        itsSettings = new ItsSettingsService(settingsStore, SETTINGS);
+        allocations = new AllocationRuleService(new AllocationRuleRepository(db.jdbc, CLOCK, SETTINGS), db.tx, audit, CLOCK, SETTINGS);
     }
 
     public static Money xaf(long amount) {
