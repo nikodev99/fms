@@ -1,5 +1,6 @@
 package org.gu.fms.desktop.platform.audit;
 
+import org.gu.fms.domain.common.Percent;
 import org.gu.fms.domain.money.Money;
 
 import java.util.Collection;
@@ -8,7 +9,8 @@ import java.util.Map;
 
 /** Encodeur JSON minimal pour le journal d'audit (évite une dépendance pour un seul usage). */
 final class Json {
-    public Json() {
+
+    private Json() {
     }
 
     static String write(Object value) {
@@ -24,6 +26,8 @@ final class Json {
             sb.append(value);
         } else if (value instanceof Money m) {
             sb.append(m.minor());
+        } else if (value instanceof Percent p) {
+            sb.append(p.basisPoints());
         } else if (value instanceof Map<?, ?> map) {
             sb.append('{');
             Iterator<? extends Map.Entry<?, ?>> it = map.entrySet().iterator();
@@ -75,5 +79,4 @@ final class Json {
         }
         sb.append('"');
     }
-
 }

@@ -315,7 +315,7 @@ public abstract class CrudScreen<T> implements Screen, Screen.Embeddable {
                 .onSuccess(saved -> {
                     current.form().markClean();
                     d.close();
-                    ui.toast.success(savedMessage(saved, creating));
+                    ui.toasts.success(savedMessage(saved, creating));
                     Object id = identityOf(saved);
                     reload(item -> identityOf(item).equals(id));
                 })

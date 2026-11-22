@@ -14,6 +14,7 @@ import org.gu.fms.desktop.app.AppModule;
 import org.gu.fms.desktop.app.AppPaths;
 import org.gu.fms.desktop.app.AppRoutes;
 import org.gu.fms.desktop.app.shell.ShellController;
+import org.gu.fms.desktop.platform.backup.BackupService;
 import org.gu.fms.desktop.platform.db.Database;
 import org.gu.fms.desktop.platform.db.migration.MigrationEngine;
 import org.gu.fms.desktop.platform.ui.nav.Navigator;
@@ -26,11 +27,17 @@ import org.gu.fms.desktop.platform.ui.view.ViewLoader;
 import java.io.InputStream;
 import java.util.Objects;
 
+/**
+ * Démarrage : création du conteneur Guice, ouverture et mise à niveau de la base (hors du fil JavaFX),
+ * sauvegarde automatique quotidienne, puis construction de la fenêtre. Si la base ne peut pas être préparée, l'application affiche
+ * la raison et s'arrête : elle ne travaille jamais sur une base dans un état incertain.
+ */
 public class FmsApplication extends Application {
+
     public static final String STYLESHEET = "/org/gu/fms/desktop/platform/ui/theme/fms.css";
     public static final String SHELL = "/org/gu/fms/desktop/app/shell/shell.fxml";
-    public static final String ICON_PATTERN = "/org/gu/fms/desktop/images/fms-logo-%d.png";
-    public static final int[] ICON_SIZES = {16, 24, 32, 48, 64, 128, 256};
+    private static final String ICON_PATTERN = "/org/gu/fms/desktop/images/fms-logo-%d.png";
+    private static final int[] ICON_SIZES = {16, 24, 32, 48, 64, 128, 256};
     private static final double MIN_WIDTH = 1024;
     private static final double MIN_HEIGHT = 640;
 
@@ -43,8 +50,16 @@ public class FmsApplication extends Application {
             injector = Guice.createInjector(new AppModule(AppPaths.resolve()));
             injector.getInstance(Database.class).open();
             injector.getInstance(MigrationEngine.class).migrate();
-        }catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             startupError = e;
+            return;
+        }
+        try {
+            injector.getInstance(BackupService.class).createAutomaticIfDue();
+        } catch (RuntimeException e) {
+            // une sauvegarde automatique ratée ne bloque pas le travail ; elle sera retentée au prochain démarrage
+            System.getLogger(FmsApplication.class.getName()).log(System.Logger.Level.WARNING,
+                    "Sauvegarde automatique impossible", e);
         }
     }
 
@@ -54,7 +69,6 @@ public class FmsApplication extends Application {
             showStartupError(startupError);
             return;
         }
-        
         ViewLoader views = injector.getInstance(ViewLoader.class);
         View<ShellController> shell = views.load(SHELL);
         StackPane root = (StackPane) shell.root();
@@ -62,12 +76,11 @@ public class FmsApplication extends Application {
         Scene scene = new Scene(root, 1280, 760);
         scene.getStylesheets().add(Objects.requireNonNull(FmsApplication.class.getResource(STYLESHEET)).toExternalForm());
 
-        injector.getInstance(ThemeManager.class).attach(root);
+        injector.getInstance(ThemeManager.class).attach(root);      // avant show() : pas de flash de thème
         injector.getInstance(OverlayHost.class).attach(root);
-        injector.getInstance(Navigator.class).navigate(AppRoutes.DASHBOARD)
-                .whenComplete((ok, e) -> {if (e != null) e.printStackTrace();});
+        injector.getInstance(Navigator.class).navigate(AppRoutes.DASHBOARD);
 
-        for (int size: ICON_SIZES) {
+        for (int size : ICON_SIZES) {
             try (InputStream icon = FmsApplication.class.getResourceAsStream(String.format(ICON_PATTERN, size))) {
                 if (icon != null) {
                     stage.getIcons().add(new Image(icon));

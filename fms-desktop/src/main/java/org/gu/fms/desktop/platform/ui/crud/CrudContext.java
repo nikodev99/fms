@@ -11,26 +11,32 @@ import org.gu.fms.desktop.platform.ui.overlay.Dialogs;
 import org.gu.fms.desktop.platform.ui.overlay.Toast;
 import org.gu.fms.desktop.platform.ui.task.UiTasks;
 
+/**
+ * Services d'interface regroupés pour les écrans de gestion : un seul paramètre de constructeur
+ * au lieu de huit, et l'ajout d'un service ne touche pas chaque écran.
+ */
 @Singleton
 public final class CrudContext {
+
     final Messages messages;
     final Formats formats;
     final Forms forms;
     final Tables tables;
     final Drawers drawers;
     final Dialogs dialogs;
-    final Toast toast;
+    final Toast toasts;
     final UiTasks tasks;
 
     @Inject
-    public CrudContext(Messages messages, Formats formats, Forms forms, Tables tables, Drawers drawers, Dialogs dialogs, Toast toast, UiTasks tasks) {
+    public CrudContext(Messages messages, Formats formats, Forms forms, Tables tables, Drawers drawers,
+                       Dialogs dialogs, Toast toasts, UiTasks tasks) {
         this.messages = messages;
         this.formats = formats;
         this.forms = forms;
         this.tables = tables;
         this.drawers = drawers;
         this.dialogs = dialogs;
-        this.toast = toast;
+        this.toasts = toasts;
         this.tasks = tasks;
     }
 
@@ -46,11 +52,19 @@ public final class CrudContext {
         return forms;
     }
 
+    public Tables tables() {
+        return tables;
+    }
+
     public Dialogs dialogs() {
         return dialogs;
     }
 
-    public Toast toast() {
-        return toast;
+    public Toast toasts() {
+        return toasts;
+    }
+
+    public UiTasks tasks() {
+        return tasks;
     }
 }

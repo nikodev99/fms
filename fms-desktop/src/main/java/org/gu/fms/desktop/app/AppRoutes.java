@@ -4,6 +4,7 @@ import org.gu.fms.desktop.features.common.ComingSoonScreen;
 import org.gu.fms.desktop.features.dashboard.DashboardScreen;
 import org.gu.fms.desktop.features.driver.DriversModuleScreen;
 import org.gu.fms.desktop.features.maintenance.MaintenanceModuleScreen;
+import org.gu.fms.desktop.features.settings.SettingsScreen;
 import org.gu.fms.desktop.features.vehicle.VehicleScreen;
 import org.gu.fms.desktop.platform.ui.icon.AppIcon;
 import org.gu.fms.desktop.platform.ui.nav.Route;
@@ -51,7 +52,7 @@ public class AppRoutes {
                 new Route("reports", "nav.reports", AppIcon.REPORTS, ANALYSIS, ComingSoonScreen.class),
                 new Route("simulations", "nav.simulations", AppIcon.SIMULATION, ANALYSIS, ComingSoonScreen.class),
 
-                new Route(SETTINGS, "nav.settings", AppIcon.SETTINGS, Route.FOOTER, ComingSoonScreen.class)
+                new Route(SETTINGS, "nav.settings", AppIcon.SETTINGS, Route.FOOTER, SettingsScreen.class)
         ));
     }
 }

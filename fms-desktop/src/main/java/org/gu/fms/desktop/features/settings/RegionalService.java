@@ -16,7 +16,7 @@ import java.util.Map;
 
 /**
  * Pays, devise et fuseau horaire (instructions §19). Pris en compte au prochain démarrage.
- *
+ * <p>
  * La devise ne peut plus changer dès qu'un montant est enregistré : les montants sont stockés en unités
  * mineures de la devise, et passer par exemple de XAF (0 décimale) à EUR (2 décimales) diviserait
  * silencieusement tous les montants par 100.
