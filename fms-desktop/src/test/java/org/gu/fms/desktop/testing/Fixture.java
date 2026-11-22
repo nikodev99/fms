@@ -2,10 +2,14 @@ package org.gu.fms.desktop.testing;
 
 import org.gu.fms.desktop.features.allocation.AllocationRuleRepository;
 import org.gu.fms.desktop.features.allocation.AllocationRuleService;
+import org.gu.fms.desktop.features.collection.CollectionRepository;
+import org.gu.fms.desktop.features.collection.DriverLedgerRepository;
+import org.gu.fms.desktop.features.collection.DriverLedgerService;
 import org.gu.fms.desktop.features.driver.AssignmentRepository;
 import org.gu.fms.desktop.features.driver.AssignmentService;
 import org.gu.fms.desktop.features.driver.DriverRepository;
 import org.gu.fms.desktop.features.driver.DriverService;
+import org.gu.fms.desktop.features.finance.*;
 import org.gu.fms.desktop.features.maintenance.*;
 import org.gu.fms.desktop.features.payroll.*;
 import org.gu.fms.desktop.features.settings.FleetPreferencesService;
@@ -57,6 +61,32 @@ public final class Fixture implements AutoCloseable {
     public final ItsBandService itsBands;
     public final ItsSettingsService itsSettings;
     public final AllocationRuleService allocations;
+    // Trésorerie, versements, paie (horloge réglable)
+    public final MutableClock clock = new MutableClock(CLOCK.instant());
+    public final UserSession session = new UserSession();
+    public final AccountRepository accountRepo;
+    public final CategoryRepository txCategoryRepo;
+    public final TransactionRepository transactionRepo;
+    public final ClosingRepository closingRepo;
+    public final TransferRepository transferRepo;
+    public final Ledger ledger;
+    //public final AccountService accounts;
+    //public final CategoryService txCategories;
+    //public final TransactionService transactions;
+    public final TransferService transfers;
+    public final CollectionRepository collectionRepo;
+    //public final DailyPointRepository pointRepo;
+    public final DriverLedgerRepository driverLedgerRepo;
+    public final DriverLedgerService driverLedger;
+    //public final CollectionService collections;
+    //public final DailyPointService dailyPoints;
+    //public final ClosingService closings;
+    public final PayslipRepository payslipRepo;
+    public final RecoveryPolicyService recoveryPolicy;
+    public final PayrollService payroll;
+    public final AdvanceService advances;
+    public final MaintenancePaymentService maintenancePayments;
+    //public final ReversalService reversals;
 
     public Fixture(Path dir) throws Exception {
         db = TestDatabase.migrated(dir);
@@ -66,7 +96,7 @@ public final class Fixture implements AutoCloseable {
         categoryRepo = new VehicleCategoryRepository(db.jdbc, CLOCK);
         vehicleRepo = new VehicleRepository(db.jdbc, CLOCK, SETTINGS);
         driverRepo = new DriverRepository(db.jdbc, CLOCK, SETTINGS);
-        assignmentRepo = new AssignmentRepository(db.jdbc, CLOCK);
+        assignmentRepo = new AssignmentRepository(db.jdbc, CLOCK, SETTINGS);
         typeRepo = new MaintenanceTypeRepository(db.jdbc, CLOCK);
         eventRepo = new MaintenanceEventRepository(db.jdbc, CLOCK, SETTINGS);
         planRepo = new MaintenancePlanRepository(db.jdbc, CLOCK);
@@ -74,14 +104,49 @@ public final class Fixture implements AutoCloseable {
         vehicles = new VehicleService(vehicleRepo, categoryRepo, db.tx, audit, CLOCK, SETTINGS);
         drivers = new DriverService(driverRepo, assignmentRepo, db.tx, audit, CLOCK, SETTINGS);
         assignments = new AssignmentService(assignmentRepo, driverRepo, vehicleRepo, formats, db.tx, audit, CLOCK, SETTINGS);
-        events = new MaintenanceEventService(eventRepo, vehicleRepo, typeRepo, db.tx, audit, CLOCK, SETTINGS);
+        transactionRepo = new TransactionRepository(db.jdbc, clock, SETTINGS);
+        events = new MaintenanceEventService(eventRepo, vehicleRepo, typeRepo, transactionRepo, db.tx, audit, CLOCK,
+                SETTINGS);
         plans = new MaintenancePlanService(planRepo, vehicleRepo, typeRepo, db.tx, audit, CLOCK, SETTINGS);
         fleetPrefs = new FleetPreferencesService(settingsStore, SETTINGS);
         repairs = new RepairThresholdService(vehicleRepo, eventRepo, fleetPrefs, SETTINGS);
-        contributions = new PayrollContributionService(new PayrollContributionRepository(db.jdbc, CLOCK, SETTINGS), db.tx, audit, CLOCK, SETTINGS);
+        contributions = new PayrollContributionService(new PayrollContributionRepository(db.jdbc, CLOCK, SETTINGS),
+                db.tx, audit, CLOCK, SETTINGS);
         itsBands = new ItsBandService(new ItsBandRepository(db.jdbc, CLOCK, SETTINGS), db.tx, audit, CLOCK, SETTINGS);
         itsSettings = new ItsSettingsService(settingsStore, SETTINGS);
-        allocations = new AllocationRuleService(new AllocationRuleRepository(db.jdbc, CLOCK, SETTINGS), db.tx, audit, CLOCK, SETTINGS);
+        allocations = new AllocationRuleService(new AllocationRuleRepository(db.jdbc, CLOCK, SETTINGS), db.tx, audit,
+                CLOCK, SETTINGS);
+
+        // Les comptes livrés s'ouvrent à la date de migration : on les ouvre au 1er janvier pour les scénarios.
+        db.jdbc.update("UPDATE financial_account SET opening_date = '2026-01-01'");
+        AuditLog clocked = new AuditLog(db.jdbc, clock, session);
+        accountRepo = new AccountRepository(db.jdbc, clock, SETTINGS);
+        txCategoryRepo = new CategoryRepository(db.jdbc, clock);
+        closingRepo = new ClosingRepository(db.jdbc, clock, SETTINGS);
+        transferRepo = new TransferRepository(db.jdbc, clock, SETTINGS);
+        ledger = new Ledger(transactionRepo, accountRepo, txCategoryRepo, closingRepo, db.tx, clocked, session, clock,
+                SETTINGS, formats);
+        //accounts = new AccountService(accountRepo, ledger, db.tx, clocked, clock, SETTINGS);
+        //txCategories = new CategoryService(txCategoryRepo, db.tx, clocked, clock, SETTINGS);
+        //transactions = new TransactionService(transactionRepo, txCategoryRepo, ledger);
+        transfers = new TransferService(transferRepo, accountRepo, txCategoryRepo, ledger, db.tx, clocked);
+        collectionRepo = new CollectionRepository(db.jdbc, clock, SETTINGS);
+        //pointRepo = new DailyPointRepository(db.jdbc, clock, SETTINGS);
+        driverLedgerRepo = new DriverLedgerRepository(db.jdbc, clock, SETTINGS);
+        driverLedger = new DriverLedgerService(driverLedgerRepo, db.tx, clocked, session, clock, SETTINGS);
+        //collections = new CollectionService(collectionRepo, pointRepo, driverRepo, vehicleRepo, txCategoryRepo,transactionRepo, ledger, driverLedger, db.tx, clocked, clock, formats);
+        //dailyPoints = new DailyPointService(pointRepo, collectionRepo, assignmentRepo, driverRepo, vehicleRepo,driverLedger, ledger, db.tx, clocked, clock, SETTINGS, formats);
+        //closings = new ClosingService(closingRepo, accountRepo, transactionRepo, txCategoryRepo, ledger, dailyPoints,db.tx, clocked, clock, formats);
+        payslipRepo = new PayslipRepository(db.jdbc, clock, SETTINGS);
+        recoveryPolicy = new RecoveryPolicyService(settingsStore);
+        payroll = new PayrollService(payslipRepo, driverRepo, collectionRepo,
+                new PayrollContributionRepository(db.jdbc, CLOCK, SETTINGS), new ItsBandRepository(db.jdbc, CLOCK, SETTINGS),
+                itsSettings, recoveryPolicy, driverLedger, txCategoryRepo, ledger, db.tx, clocked, clock, SETTINGS);
+        advances = new AdvanceService(ledger, transactionRepo, txCategoryRepo, driverRepo, driverLedger,
+                driverLedgerRepo, db.tx, formats);
+        maintenancePayments = new MaintenancePaymentService(eventRepo, transactionRepo, txCategoryRepo, ledger, db.tx,
+                formats, SETTINGS);
+        //reversals = new ReversalService(transactionRepo, ledger, db.tx, Set.of(new TransferReversalHandler(transfers, transactionRepo), new PayrollReversalHandler(payroll), advances));
     }
 
     public static Money xaf(long amount) {
@@ -96,7 +161,12 @@ public final class Fixture implements AutoCloseable {
     public Driver driver(String lastName, String licence) {
         return drivers.save(new Driver(null, 0, lastName, "Jean", "06 474 50 67", null, null, licence, null, null,
                 Driver.DriverStatus.ACTIVE, PayScheme.PERCENTAGE, null, Percent.of("15"),
-                xaf(25_000), null, false, null, null, null, null));
+                xaf(25_000), null, false, null, true, null, null, null));
+    }
+
+    /** Compte livré par la migration (Caisse, MTN Mobile Money, Airtel Money). */
+    public long account(String name) {
+        return db.jdbc.queryLong("SELECT id FROM financial_account WHERE name = ?", name);
     }
 
     public long auditCount(String entityType) {

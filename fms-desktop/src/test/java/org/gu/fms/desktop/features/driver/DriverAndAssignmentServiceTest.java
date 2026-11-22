@@ -37,8 +37,8 @@ class DriverAndAssignmentServiceTest {
         f.close();
     }
 
-    private DriverAssignment assign(Driver d, Vehicle v, DriverAssignment.AssignmentRole role, LocalDate start, LocalDate end) {
-        return f.assignments.save(new DriverAssignment(null, 0, d.id(), v.id(), role, start, end, null));
+    private DriverAssignment assign(Driver d, Vehicle v, AssignmentRole role, LocalDate start, LocalDate end) {
+        return f.assignments.save(new DriverAssignment(null, 0, d.id(), v.id(), role, start, end, null, null));
     }
 
     @Test
@@ -57,17 +57,17 @@ class DriverAndAssignmentServiceTest {
         Vehicle v = f.vehicle("BZ 1");
         Driver jean = f.driver("Mbemba", "A1");
         Driver paul = f.driver("Okemba", "A2");
-        assign(jean, v, DriverAssignment.AssignmentRole.PRIMARY, START, null);
+        assign(jean, v, AssignmentRole.PRIMARY, START, null);
 
         ValidationException e = assertThrows(ValidationException.class,
-                () -> assign(paul, v, DriverAssignment.AssignmentRole.PRIMARY, START.plusMonths(2), null));
+                () -> assign(paul, v, AssignmentRole.PRIMARY, START.plusMonths(2), null));
         FieldError err = e.errors().get(0);
         assertEquals("vehicleId", err.field());
         assertEquals("assignment.vehicleHasPrimary", err.messageKey());
         assertEquals("MBEMBA Jean", err.args().get(0));
         assertEquals("01/01/2026", err.args().get(2));
 
-        assign(paul, v, DriverAssignment.AssignmentRole.NIGHT, START.plusMonths(2), null);
+        assign(paul, v, AssignmentRole.NIGHT, START.plusMonths(2), null);
         assertEquals(2, f.assignmentRepo.count());
     }
 
@@ -76,13 +76,13 @@ class DriverAndAssignmentServiceTest {
         Vehicle v = f.vehicle("BZ 1");
         Driver jean = f.driver("Mbemba", "A1");
         Driver paul = f.driver("Okemba", "A2");
-        DriverAssignment first = assign(jean, v, DriverAssignment.AssignmentRole.PRIMARY, START, null);
+        DriverAssignment first = assign(jean, v, AssignmentRole.PRIMARY, START, null);
         DriverAssignment ended = f.assignments.save(new DriverAssignment(first.id(), first.version(), jean.id(),
-                v.id(), DriverAssignment.AssignmentRole.PRIMARY, START, START.plusMonths(3).minusDays(1), null));
-        assign(paul, v, DriverAssignment.AssignmentRole.PRIMARY, START.plusMonths(3), null);
+                v.id(), AssignmentRole.PRIMARY, START, START.plusMonths(3).minusDays(1), null, null));
+        assign(paul, v, AssignmentRole.PRIMARY, START.plusMonths(3), null);
 
         ValidationException e = assertThrows(ValidationException.class, () -> f.assignments.save(new DriverAssignment(
-                ended.id(), ended.version(), paul.id(), v.id(), AssignmentRole.PRIMARY, START, ended.endDate(), null)));
+                ended.id(), ended.version(), paul.id(), v.id(), AssignmentRole.PRIMARY, START, ended.endDate(), null, null)));
         assertEquals("assignment.partiesFixed", e.errors().get(0).messageKey());
     }
 

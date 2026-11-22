@@ -13,7 +13,7 @@ class AssignmentRulesTest {
 
     private static DriverAssignment a(Long id, long driver, long vehicle, DriverAssignment.AssignmentRole role, LocalDate start,
                                       LocalDate end) {
-        return new DriverAssignment(id, 0, driver, vehicle, role, start, end, null);
+        return new DriverAssignment(id, 0, driver, vehicle, role, start, end, null, null);
     }
 
     @Test
