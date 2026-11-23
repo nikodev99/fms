@@ -4,6 +4,7 @@ import org.gu.fms.desktop.testing.Fixture;
 import org.gu.fms.domain.collection.CollectionEntry;
 import org.gu.fms.domain.collection.CollectionKind;
 import org.gu.fms.domain.collection.CollectionStatus;
+import org.gu.fms.domain.collection.DaySituation;
 import org.gu.fms.domain.common.ValidationException;
 import org.gu.fms.domain.driver.Driver;
 import org.gu.fms.domain.driver.DriverAssignment;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 import static org.gu.fms.desktop.testing.Fixture.xaf;
@@ -59,7 +61,7 @@ class CollectionAndCashFlowTest {
         f.close();
     }
 
-    /*private CollectionEntry collect(Driver d, long amount, LocalDate date) {
+    private CollectionEntry collect(Driver d, long amount, LocalDate date) {
         return f.collections.save(new CollectionEntry(null, 0, date, null, d.id(), car.id(), cash, xaf(amount),
                 CollectionKind.COLLECTION, CollectionStatus.VALID, null, null, null, null, null));
     }
@@ -162,5 +164,5 @@ class CollectionAndCashFlowTest {
         assertEquals(xaf(25_000), f.driverLedger.balance(jean.id()).shortageDue());
         assertTrue(f.dailyPoints.preview(DAY).stream().allMatch(PointRow::validated));
         assertThrows(RuntimeException.class, () -> f.db.jdbc.update("UPDATE daily_point SET expected = 0"));
-    }*/
+    }
 }

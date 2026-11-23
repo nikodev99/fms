@@ -44,7 +44,7 @@ class LedgerAndTransferTest {
                 .findFirst().orElseThrow();
     }
 
-    /*private FinancialTransaction manual(TransactionDirection d, String category, long account, long amount, LocalDate date) {
+    private FinancialTransaction manual(TransactionDirection d, String category, long account, long amount, LocalDate date) {
         return f.transactions.save(new FinancialTransaction(null, 0, date, null, d, category(category), null, account,
                 xaf(amount), null, null, "test", null, TransactionSource.MANUAL, null, null, null, null));
     }
@@ -67,9 +67,9 @@ class LedgerAndTransferTest {
         ValidationException early = assertThrows(ValidationException.class,
                 () -> manual(TransactionDirection.OUTFLOW, "Frais administratifs", cash, 10_000, DAY.minusDays(1)));
         assertEquals("account.insufficientBalance", early.errors().get(0).messageKey());
-    }*/
+    }
 
-    /*@Test
+    @Test
     void reversalCancelsAndCannotBeRepeated() {
         manual(TransactionDirection.INFLOW, "Apport du propriétaire", cash, 50_000, DAY.minusDays(5));
         FinancialTransaction fuel = f.transactions.save(new FinancialTransaction(null, 0, DAY.minusDays(3), null,
@@ -118,5 +118,5 @@ class LedgerAndTransferTest {
                         account.name(), account.type(), xaf(5_000), account.openingDate(), true, false, false, null)));
         assertEquals(java.util.List.of("account.openingLocked", "account.deactivateNonZero"),
                 e.errors().stream().map(x -> x.messageKey()).toList());
-    }*/
+    }
 }

@@ -2,9 +2,7 @@ package org.gu.fms.desktop.testing;
 
 import org.gu.fms.desktop.features.allocation.AllocationRuleRepository;
 import org.gu.fms.desktop.features.allocation.AllocationRuleService;
-import org.gu.fms.desktop.features.collection.CollectionRepository;
-import org.gu.fms.desktop.features.collection.DriverLedgerRepository;
-import org.gu.fms.desktop.features.collection.DriverLedgerService;
+import org.gu.fms.desktop.features.collection.*;
 import org.gu.fms.desktop.features.driver.AssignmentRepository;
 import org.gu.fms.desktop.features.driver.AssignmentService;
 import org.gu.fms.desktop.features.driver.DriverRepository;
@@ -31,6 +29,7 @@ import org.gu.fms.domain.vehicle.Vehicle;
 
 import java.nio.file.Path;
 import java.time.Clock;
+import java.util.Set;
 
 /** Services câblés à la main sur une vraie base SQLite migrée (sans Guice), pour les tests d'intégration. */
 public final class Fixture implements AutoCloseable {
@@ -70,23 +69,23 @@ public final class Fixture implements AutoCloseable {
     public final ClosingRepository closingRepo;
     public final TransferRepository transferRepo;
     public final Ledger ledger;
-    //public final AccountService accounts;
-    //public final CategoryService txCategories;
-    //public final TransactionService transactions;
+    public final AccountService accounts;
+    public final CategoryService txCategories;
+    public final TransactionService transactions;
     public final TransferService transfers;
     public final CollectionRepository collectionRepo;
-    //public final DailyPointRepository pointRepo;
+    public final DailyPointRepository pointRepo;
     public final DriverLedgerRepository driverLedgerRepo;
     public final DriverLedgerService driverLedger;
-    //public final CollectionService collections;
-    //public final DailyPointService dailyPoints;
-    //public final ClosingService closings;
+    public final CollectionService collections;
+    public final DailyPointService dailyPoints;
+    public final ClosingService closings;
     public final PayslipRepository payslipRepo;
     public final RecoveryPolicyService recoveryPolicy;
     public final PayrollService payroll;
     public final AdvanceService advances;
     public final MaintenancePaymentService maintenancePayments;
-    //public final ReversalService reversals;
+    public final ReversalService reversals;
 
     public Fixture(Path dir) throws Exception {
         db = TestDatabase.migrated(dir);
@@ -126,17 +125,17 @@ public final class Fixture implements AutoCloseable {
         transferRepo = new TransferRepository(db.jdbc, clock, SETTINGS);
         ledger = new Ledger(transactionRepo, accountRepo, txCategoryRepo, closingRepo, db.tx, clocked, session, clock,
                 SETTINGS, formats);
-        //accounts = new AccountService(accountRepo, ledger, db.tx, clocked, clock, SETTINGS);
-        //txCategories = new CategoryService(txCategoryRepo, db.tx, clocked, clock, SETTINGS);
-        //transactions = new TransactionService(transactionRepo, txCategoryRepo, ledger);
+        accounts = new AccountService(accountRepo, ledger, db.tx, clocked, clock, SETTINGS);
+        txCategories = new CategoryService(txCategoryRepo, db.tx, clocked, clock, SETTINGS);
+        transactions = new TransactionService(transactionRepo, txCategoryRepo, ledger);
         transfers = new TransferService(transferRepo, accountRepo, txCategoryRepo, ledger, db.tx, clocked);
         collectionRepo = new CollectionRepository(db.jdbc, clock, SETTINGS);
-        //pointRepo = new DailyPointRepository(db.jdbc, clock, SETTINGS);
+        pointRepo = new DailyPointRepository(db.jdbc, clock, SETTINGS);
         driverLedgerRepo = new DriverLedgerRepository(db.jdbc, clock, SETTINGS);
         driverLedger = new DriverLedgerService(driverLedgerRepo, db.tx, clocked, session, clock, SETTINGS);
-        //collections = new CollectionService(collectionRepo, pointRepo, driverRepo, vehicleRepo, txCategoryRepo,transactionRepo, ledger, driverLedger, db.tx, clocked, clock, formats);
-        //dailyPoints = new DailyPointService(pointRepo, collectionRepo, assignmentRepo, driverRepo, vehicleRepo,driverLedger, ledger, db.tx, clocked, clock, SETTINGS, formats);
-        //closings = new ClosingService(closingRepo, accountRepo, transactionRepo, txCategoryRepo, ledger, dailyPoints,db.tx, clocked, clock, formats);
+        collections = new CollectionService(collectionRepo, pointRepo, driverRepo, vehicleRepo, txCategoryRepo,transactionRepo, ledger, driverLedger, db.tx, clocked, clock, formats);
+        dailyPoints = new DailyPointService(pointRepo, collectionRepo, assignmentRepo, driverRepo, vehicleRepo,driverLedger, ledger, db.tx, clocked, clock, SETTINGS, formats);
+        closings = new ClosingService(closingRepo, accountRepo, transactionRepo, txCategoryRepo, ledger, dailyPoints,db.tx, clocked, clock, formats);
         payslipRepo = new PayslipRepository(db.jdbc, clock, SETTINGS);
         recoveryPolicy = new RecoveryPolicyService(settingsStore);
         payroll = new PayrollService(payslipRepo, driverRepo, collectionRepo,
@@ -146,7 +145,7 @@ public final class Fixture implements AutoCloseable {
                 driverLedgerRepo, db.tx, formats);
         maintenancePayments = new MaintenancePaymentService(eventRepo, transactionRepo, txCategoryRepo, ledger, db.tx,
                 formats, SETTINGS);
-        //reversals = new ReversalService(transactionRepo, ledger, db.tx, Set.of(new TransferReversalHandler(transfers, transactionRepo), new PayrollReversalHandler(payroll), advances));
+        reversals = new ReversalService(transactionRepo, ledger, db.tx, Set.of(new TransferReversalHandler(transfers, transactionRepo), new PayrollReversalHandler(payroll), advances));
     }
 
     public static Money xaf(long amount) {
