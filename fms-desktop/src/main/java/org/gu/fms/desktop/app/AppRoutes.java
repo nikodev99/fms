@@ -1,9 +1,14 @@
 package org.gu.fms.desktop.app;
 
+import org.gu.fms.desktop.features.cash.CashModuleScreen;
+import org.gu.fms.desktop.features.collection.CollectionsModuleScreen;
 import org.gu.fms.desktop.features.common.ComingSoonScreen;
 import org.gu.fms.desktop.features.dashboard.DashboardScreen;
 import org.gu.fms.desktop.features.driver.DriversModuleScreen;
+import org.gu.fms.desktop.features.finance.AccountsModuleScreen;
+import org.gu.fms.desktop.features.finance.TransactionsModuleScreen;
 import org.gu.fms.desktop.features.maintenance.MaintenanceModuleScreen;
+import org.gu.fms.desktop.features.payroll.PayrollModuleScreen;
 import org.gu.fms.desktop.features.settings.SettingsScreen;
 import org.gu.fms.desktop.features.vehicle.VehicleScreen;
 import org.gu.fms.desktop.platform.ui.icon.AppIcon;
@@ -21,6 +26,9 @@ public class AppRoutes {
     public static final String DASHBOARD = "dashboard";
     public static final String CASH = "cash";
     public static final String COLLECTIONS = "collections";
+    public static final String TRANSACTIONS = "transactions";
+    public static final String ACCOUNTS = "accounts";
+    public static final String PAYROLL = "payroll";
     public static final String VEHICLES = "vehicles";
     public static final String DRIVERS = "drivers";
     public static final String MAINTENANCE = "maintenance";
@@ -37,16 +45,16 @@ public class AppRoutes {
     public static RouteRegistry registry() {
         return new RouteRegistry(List.of(
                 new Route(DASHBOARD, "nav.dashboard", AppIcon.DASHBOARD, OPERATIONS, DashboardScreen.class),
-                new Route(CASH, "nav.cash", AppIcon.CASH_REGISTER, OPERATIONS, ComingSoonScreen.class),
-                new Route(COLLECTIONS, "nav.collections", AppIcon.COLLECTIONS, OPERATIONS, ComingSoonScreen.class),
-                new Route("transactions", "nav.transactions", AppIcon.TRANSACTIONS, OPERATIONS, ComingSoonScreen.class),
+                new Route(CASH, "nav.cash", AppIcon.CASH_REGISTER, OPERATIONS, CashModuleScreen.class),
+                new Route(COLLECTIONS, "nav.collections", AppIcon.COLLECTIONS, OPERATIONS, CollectionsModuleScreen.class),
+                new Route(TRANSACTIONS, "nav.transactions", AppIcon.TRANSACTIONS, OPERATIONS, TransactionsModuleScreen.class),
 
                 new Route(VEHICLES, "nav.vehicles", AppIcon.VEHICLE, FLEET, VehicleScreen.class),
                 new Route(DRIVERS, "nav.drivers", AppIcon.DRIVERS, FLEET, DriversModuleScreen.class),
                 new Route(MAINTENANCE, "nav.maintenance", AppIcon.MAINTENANCE, FLEET, MaintenanceModuleScreen.class),
 
-                new Route("accounts", "nav.accounts", AppIcon.ACCOUNTS, FINANCE, ComingSoonScreen.class),
-                new Route("payroll", "nav.payroll", AppIcon.PAYROLL, FINANCE, ComingSoonScreen.class),
+                new Route(ACCOUNTS, "nav.accounts", AppIcon.ACCOUNTS, FINANCE, AccountsModuleScreen.class),
+                new Route(PAYROLL, "nav.payroll", AppIcon.PAYROLL, FINANCE, PayrollModuleScreen.class),
                 new Route("loans", "nav.loans", AppIcon.LOAN, FINANCE, ComingSoonScreen.class),
 
                 new Route("reports", "nav.reports", AppIcon.REPORTS, ANALYSIS, ComingSoonScreen.class),
