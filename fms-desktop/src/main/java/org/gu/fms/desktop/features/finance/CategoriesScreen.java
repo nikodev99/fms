@@ -23,8 +23,9 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Transactions › Catégories. Les catégories système (versements, virements, clôture, paie, entretien) ne changent
- * que de libellé ; une catégorie déjà utilisée garde son sens et sa nature.
+ * Paramètres › Finances › Catégories de transactions. Les catégories système (versements, virements, clôture, paie,
+ * entretien, emprunts) sont alimentées par les modules : consultation seule. Les autres se modifient ; une catégorie
+ * déjà utilisée garde son sens et sa nature, et se désactive au lieu d'être supprimée.
  */
 public final class CategoriesScreen extends CrudScreen<TransactionCategory> {
 
@@ -137,11 +138,12 @@ public final class CategoriesScreen extends CrudScreen<TransactionCategory> {
         private final CheckInput directEntry;
         private final CheckInput requiresVehicle;
         private final CheckInput active;
+        private final boolean system;
 
         Editor(Forms forms, Messages messages, TransactionCategory existing, boolean used) {
             this.messages = messages;
             this.existing = existing;
-            boolean system = existing != null && existing.system();
+            this.system = existing != null && existing.system();
             form = forms.create();
             name = form.text("name", messages.get("txCategory.name")).required().maxLength(CategoryRules.NAME_MAX).span(2);
             direction = form.choice("direction", messages.get("txCategory.direction"), TransactionDirection.class)
@@ -183,6 +185,11 @@ public final class CategoriesScreen extends CrudScreen<TransactionCategory> {
         @Override
         public Form form() {
             return form;
+        }
+
+        @Override
+        public boolean readOnly() {
+            return system;
         }
 
         @Override

@@ -7,6 +7,7 @@ import org.gu.fms.desktop.platform.audit.AuditAction;
 import org.gu.fms.desktop.platform.audit.AuditLog;
 import org.gu.fms.desktop.platform.db.TransactionManager;
 import org.gu.fms.desktop.platform.format.Formats;
+import org.gu.fms.desktop.platform.session.UserSession;
 import org.gu.fms.domain.common.FieldError;
 import org.gu.fms.domain.common.TextRules;
 import org.gu.fms.domain.common.ValidationException;
@@ -36,6 +37,7 @@ public final class ClosingService {
     static final String AUDIT_TYPE = "cash_closing";
 
     private final ClosingRepository closings;
+    private final UserSession session;
     private final AccountRepository accounts;
     private final TransactionRepository transactions;
     private final CategoryRepository categories;
@@ -49,7 +51,8 @@ public final class ClosingService {
     @Inject
     public ClosingService(ClosingRepository closings, AccountRepository accounts, TransactionRepository transactions,
                           CategoryRepository categories, Ledger ledger, DailyPointService dailyPoints,
-                          TransactionManager tx, AuditLog audit, Clock clock, Formats formats) {
+                          TransactionManager tx, AuditLog audit, Clock clock, Formats formats, UserSession session) {
+        this.session = session;
         this.closings = closings;
         this.accounts = accounts;
         this.transactions = transactions;
@@ -127,6 +130,7 @@ public final class ClosingService {
 
     /** Rouvre la DERNIÈRE clôture d'un compte ; son écart éventuel est contre-passé à la date clôturée. */
     public CashClosing reopen(long closingId, String reason) {
+        session.requireOwner();
         return tx.inTransaction(c -> {
             CashClosing closing = closings.findById(closingId)
                     .orElseThrow(() -> ValidationException.of(FieldError.of(null, "closing.unknown")));

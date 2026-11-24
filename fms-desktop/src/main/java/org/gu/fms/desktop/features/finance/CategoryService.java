@@ -5,6 +5,7 @@ import jakarta.inject.Singleton;
 import org.gu.fms.desktop.platform.audit.AuditLog;
 import org.gu.fms.desktop.platform.db.TransactionManager;
 import org.gu.fms.desktop.platform.services.AuditedCrudService;
+import org.gu.fms.desktop.platform.services.DeletableService;
 import org.gu.fms.desktop.platform.settings.AppSettings;
 import org.gu.fms.domain.common.FieldError;
 import org.gu.fms.domain.finance.CategoryRules;
@@ -14,14 +15,18 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 
-/** Catégories de transactions : les catégories créées par l'utilisateur ne sont jamais des catégories système. */
+/**
+ * Catégories de transactions (Paramètres › Finances). Système : alimentées par les modules, entièrement verrouillées.
+ * Les autres sont modifiables, et supprimables tant qu'aucune transaction ne les utilise.
+ */
 @Singleton
-public final class CategoryService extends AuditedCrudService<TransactionCategory> {
+public final class CategoryService extends AuditedCrudService<TransactionCategory> implements DeletableService<TransactionCategory> {
 
     private final CategoryRepository categories;
 
     @Inject
-    public CategoryService(CategoryRepository repository, TransactionManager tx, AuditLog audit, Clock clock, AppSettings settings) {
+    public CategoryService(CategoryRepository repository, TransactionManager tx, AuditLog audit, Clock clock,
+                           AppSettings settings) {
         super(repository, tx, audit, clock, settings);
         this.categories = repository;
     }
@@ -58,6 +63,11 @@ public final class CategoryService extends AuditedCrudService<TransactionCategor
     @Override
     protected FieldError uniqueViolation(TransactionCategory c) {
         return FieldError.of("name", "txCategory.name.taken");
+    }
+
+    @Override
+    protected boolean isSystem(TransactionCategory e) {
+        return e.system();
     }
 
     @Override

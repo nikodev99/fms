@@ -3,6 +3,7 @@ package org.gu.fms.desktop.features.finance;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.gu.fms.desktop.platform.db.TransactionManager;
+import org.gu.fms.desktop.platform.session.UserSession;
 import org.gu.fms.domain.common.FieldError;
 import org.gu.fms.domain.common.TextRules;
 import org.gu.fms.domain.common.ValidationException;
@@ -23,13 +24,15 @@ import java.util.Set;
 public final class ReversalService {
 
     private final TransactionRepository transactions;
+    private final UserSession session;
     private final Ledger ledger;
     private final TransactionManager tx;
     private final Map<TransactionSource, ReversalHandler> handlers = new EnumMap<>(TransactionSource.class);
 
     @Inject
     public ReversalService(TransactionRepository transactions, Ledger ledger, TransactionManager tx,
-                           Set<ReversalHandler> moduleHandlers) {
+                           Set<ReversalHandler> moduleHandlers, UserSession session) {
+        this.session = session;
         this.transactions = transactions;
         this.ledger = ledger;
         this.tx = tx;
@@ -52,6 +55,9 @@ public final class ReversalService {
         if (t.source() == TransactionSource.CASH_CLOSING) {
             return "transaction.reversal.closing";
         }
+        if (t.source() == TransactionSource.LOAN_DISBURSEMENT) {
+            return "loan.reversal.disbursement";
+        }
         if (t.source() != TransactionSource.MANUAL && t.source() != TransactionSource.MAINTENANCE
                 && !handlers.containsKey(t.source())) {
             return "transaction.reversal.unsupported";
@@ -60,6 +66,7 @@ public final class ReversalService {
     }
 
     public FinancialTransaction reverse(long transactionId, String reason) {
+        session.requireOwner();
         String text = TextRules.normalize(reason);
         if (text == null) {
             throw ValidationException.of(FieldError.of("reason", "transaction.reversal.reasonRequired"));

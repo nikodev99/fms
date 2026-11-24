@@ -93,6 +93,11 @@ public final class ClosingRepository extends JdbcRepository<CashClosing> {
                 mapper(), accountId, day);
     }
 
+    public List<CashClosing> findBetween(LocalDate from, LocalDate to) {
+        return jdbc.query("SELECT * FROM cash_closing WHERE closing_date BETWEEN ? AND ? ORDER BY closing_date, account_id,"
+                + " id", mapper(), from, to);
+    }
+
     public List<CashClosing> findForDate(LocalDate day) {
         return jdbc.query("SELECT * FROM cash_closing WHERE closing_date = ? ORDER BY id DESC", mapper(), day);
     }
