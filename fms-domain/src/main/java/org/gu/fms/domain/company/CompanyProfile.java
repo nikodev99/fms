@@ -11,7 +11,7 @@ import java.util.List;
  *
  * @param rccm numéro du Registre du commerce et du crédit mobilier
  * @param niu  numéro d'identification unique (fiscal)
- * @param logoFile nom du fichier logo copié dans le dossier de données (null = logo FMS)
+ * @param logoFile référence du logo enregistré par l'application (null = logo FMS)
  */
 public record CompanyProfile(String name, String legalForm, String rccm, String niu, String address, String city,
                              String phone, String email, String logoFile) {

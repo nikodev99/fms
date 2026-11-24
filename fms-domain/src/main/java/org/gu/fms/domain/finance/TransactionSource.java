@@ -11,10 +11,14 @@ public enum TransactionSource {
     CASH_CLOSING,
     MAINTENANCE,
     PAYROLL,
-    ADVANCE;
+    ADVANCE,
+    /** Échéance d'emprunt payée (source_id = échéance). */
+    LOAN,
+    /** Déblocage d'un emprunt (source_id = emprunt) : se corrige en annulant l'emprunt. */
+    LOAN_DISBURSEMENT;
 
     /** Peut-on contre-passer la transaction depuis l'écran Transactions ? */
     public boolean reversibleFromLedger() {
-        return this != COLLECTION && this != CASH_CLOSING;
+        return this != COLLECTION && this != CASH_CLOSING && this != LOAN_DISBURSEMENT;
     }
 }

@@ -10,7 +10,7 @@ import java.util.List;
 
 /**
  * Valeurs par défaut et délais d'alerte de la flotte (Paramètres › Flotte).
- *
+ * <p>
  * Ce sont des préférences de gestion modifiables, pas des règles légales.
  *
  * @param defaultRepairThreshold seuil de réparations proposé à la création d'un véhicule (null = aucun)
@@ -18,9 +18,10 @@ import java.util.List;
  * @param documentAlertDays      alerte avant l'expiration d'un document (permis, assurance…)
  * @param maintenanceAlertDays   alerte avant l'échéance d'un entretien (date)
  * @param maintenanceAlertKm     alerte avant l'échéance d'un entretien (kilométrage)
+ * @param loanAlertDays          alerte avant l'échéance d'un remboursement d'emprunt
  */
 public record FleetPreferences(Money defaultRepairThreshold, Percent repairWarningPercent, long documentAlertDays,
-                               long maintenanceAlertDays, long maintenanceAlertKm) {
+                               long maintenanceAlertDays, long maintenanceAlertKm, long loanAlertDays) {
 
     public static final long DAYS_MAX = 365;
     public static final long KM_MAX = 50_000;
@@ -36,6 +37,7 @@ public record FleetPreferences(Money defaultRepairThreshold, Percent repairWarni
         range(errors, "documentAlertDays", documentAlertDays, DAYS_MAX);
         range(errors, "maintenanceAlertDays", maintenanceAlertDays, DAYS_MAX);
         range(errors, "maintenanceAlertKm", maintenanceAlertKm, KM_MAX);
+        range(errors, "loanAlertDays", loanAlertDays, DAYS_MAX);
         return errors;
     }
 

@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>org.gu.fms</groupId>
         <artifactId>fms-app</artifactId>
@@ -57,10 +58,17 @@
             <version>${validatorfx.version}</version>
         </dependency>
         <dependency>
-            <!-- Tableau de bord (intégration à l'étape « Tableau de bord ») -->
-            <groupId>eu.hansolo</groupId>
-            <artifactId>tilesfx</artifactId>
-            <version>${tilesfx.version}</version>
+            <!-- Rapports PDF. 2.0.x = dernière ligne compatible Java 17 (3.x et 2.1+ exigent Java 21).
+                 Licence LGPL-2.1 / MPL-2.0. Graphiques du tableau de bord : JavaFX Charts (javafx-controls). -->
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf</artifactId>
+            <version>${openpdf.version}</version>
+        </dependency>
+        <dependency>
+            <!-- Aperçu des PDF (rapports, pièces jointes) : rendu des pages en images. Licence Apache-2.0. -->
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>${pdfbox.version}</version>
         </dependency>
 
         <!-- Infrastructure -->
@@ -102,5 +110,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Type de document à échéance (assurance, vignette, contrôle technique, licence, permis…) — instructions §8.
+ * Type de document à échéance (assurance, vignette, contrôle technique, licence, permis…) — Instructions §8.
  * Même modèle que l'édition Excel (« Obligatoire pour » Véhicule / Chauffeur).
  * Le suivi des documents eux-mêmes (dates d'expiration par véhicule et par chauffeur) viendra avec le module Documents.
  *

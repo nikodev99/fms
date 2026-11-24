@@ -8,14 +8,19 @@ import java.util.Objects;
 
 /**
  * Chauffeur (instructions §4.2) et accord de rémunération (§4.7).
- * <p>
+ *
+ * Le permis de conduire et le certificat médical sont suivis dans le module Documents (documents du chauffeur).
+ *
  * Ne contient que l'ACCORD : montants convenus, jamais de soldes. Les avances en cours, manquants cumulés,
  * dettes et caution effectivement versée seront CALCULÉS par les modules Versements et Paie à partir
  * de leurs mouvements ; ils ne sont jamais saisis ici.
  *
- * @param dailyTarget   versement journalier attendu (base du calcul des manquants)
+ * @param dailyTarget   versement journalier proposé par défaut à la création d'une affectation ; le montant attendu
+ *                      qui fait foi est celui de l'affectation (un même chauffeur peut avoir un objectif différent
+ *                      comme chauffeur de nuit ou sur un autre véhicule)
  * @param depositAgreed caution convenue à l'embauche (montant à constituer, pas montant reçu)
- * @param cnssSubject   le chauffeur est-il déclaré à la CNSS ? (cotisations CNSS appliquées en paie)
+ * @param cnssSubject   le chauffeur est-il déclaré à la CNSS ? (cotisations CNSS, CAMU et TUS appliquées en paie)
+ * @param itsSubject    l'ITS est-il retenu sur son salaire ? (s'applique si l'ITS est aussi activé dans les paramètres)
  */
 public record Driver(
         Long id,
@@ -25,8 +30,6 @@ public record Driver(
         String phone,
         String address,
         String idNumber,
-        String licenceNumber,
-        LocalDate licenceExpiry,
         LocalDate hireDate,
         DriverStatus status,
         PayScheme payScheme,
@@ -58,21 +61,21 @@ public record Driver(
     }
 
     public Driver withIdentity(long newId, long newVersion) {
-        return new Driver(newId, newVersion, lastName, firstName, phone, address, idNumber, licenceNumber,
-                licenceExpiry, hireDate, status, payScheme, fixedSalary, commissionRate, dailyTarget, depositAgreed,
+        return new Driver(newId, newVersion, lastName, firstName, phone, address, idNumber,
+                hireDate, status, payScheme, fixedSalary, commissionRate, dailyTarget, depositAgreed,
                 cnssSubject, cnssNumber, itsSubject, maritalStatus, dependentChildren, notes);
     }
 
     public Driver withStatus(DriverStatus newStatus) {
-        return new Driver(id, version, lastName, firstName, phone, address, idNumber, licenceNumber,
-                licenceExpiry, hireDate, newStatus, payScheme, fixedSalary, commissionRate, dailyTarget, depositAgreed,
+        return new Driver(id, version, lastName, firstName, phone, address, idNumber,
+                hireDate, newStatus, payScheme, fixedSalary, commissionRate, dailyTarget, depositAgreed,
                 cnssSubject, cnssNumber, itsSubject, maritalStatus, dependentChildren, notes);
     }
 
     /** Copie normalisée (voir {@link DriverRules#normalize(Driver)}). */
-    Driver normalized(String nLast, String nFirst, String nPhone, String nAddress, String nId, String nLicence,
+    Driver normalized(String nLast, String nFirst, String nPhone, String nAddress, String nId,
                       Money nFixed, Percent nRate, String nCnss, String nNotes) {
-        return new Driver(id, version, nLast, nFirst, nPhone, nAddress, nId, nLicence, licenceExpiry, hireDate,
+        return new Driver(id, version, nLast, nFirst, nPhone, nAddress, nId, hireDate,
                 status, payScheme, nFixed, nRate, dailyTarget, depositAgreed, cnssSubject, nCnss, itsSubject, maritalStatus,
                 dependentChildren, nNotes);
     }

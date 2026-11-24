@@ -46,8 +46,6 @@ public final class DriverRepository extends JdbcRepository<Driver> {
                 row.string("phone"),
                 row.string("address"),
                 row.string("id_number"),
-                row.string("licence_number"),
-                row.localDate("licence_expiry"),
                 row.localDate("hire_date"),
                 row.enumValue("status", DriverStatus.class),
                 row.enumValue("pay_scheme", PayScheme.class),
@@ -81,8 +79,6 @@ public final class DriverRepository extends JdbcRepository<Driver> {
         m.put("phone", d.phone());
         m.put("address", d.address());
         m.put("id_number", d.idNumber());
-        m.put("licence_number", d.licenceNumber());
-        m.put("licence_expiry", d.licenceExpiry());
         m.put("hire_date", d.hireDate());
         m.put("status", d.status());
         m.put("pay_scheme", d.payScheme());
@@ -97,9 +93,5 @@ public final class DriverRepository extends JdbcRepository<Driver> {
         m.put("dependent_children", d.dependentChildren());
         m.put("notes", d.notes());
         return m;
-    }
-
-    public boolean licenceTaken(String licence, Long excludingId) {
-        return existsWithValue("licence_number", licence, excludingId);
     }
 }

@@ -1,10 +1,13 @@
 package org.gu.fms.desktop.features.driver;
 
 import javafx.beans.binding.Bindings;
+import org.gu.fms.desktop.features.document.DocumentDraft;
+import org.gu.fms.desktop.features.document.DocumentDrafts;
 import org.gu.fms.desktop.platform.i18n.Messages;
 import org.gu.fms.desktop.platform.ui.crud.EntityEditor;
 import org.gu.fms.desktop.platform.ui.form.*;
 import org.gu.fms.domain.common.TextRules;
+import org.gu.fms.domain.document.DocumentType;
 import org.gu.fms.domain.driver.Driver;
 import org.gu.fms.domain.driver.Driver.DriverStatus;
 import org.gu.fms.domain.driver.DriverRules;
@@ -12,6 +15,7 @@ import org.gu.fms.domain.driver.MaritalStatus;
 import org.gu.fms.domain.driver.PayScheme;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.function.Supplier;
 
 /**
@@ -28,8 +32,7 @@ final class DriverEditor implements EntityEditor<Driver> {
     private final TextInput phone;
     private final TextAreaInput address;
     private final TextInput idNumber;
-    private final TextInput licenceNumber;
-    private final DateInput licenceExpiry;
+    private final DocumentDrafts drafts;
     private final DateInput hireDate;
     private final ChoiceInput<DriverStatus> status;
     private final ChoiceInput<PayScheme> payScheme;
@@ -44,25 +47,21 @@ final class DriverEditor implements EntityEditor<Driver> {
     private final NumberInput children;
     private final TextAreaInput notes;
 
-    DriverEditor(Forms forms, Messages messages, Supplier<LocalDate> today, Driver existing) {
+    DriverEditor(Forms forms, Messages messages, Supplier<LocalDate> today, Driver existing,
+                 List<DocumentType> documentTypes) {
         this.messages = messages;
         this.existing = existing;
         form = forms.create();
 
         form.section(messages.get("driver.section.identity"));
         lastName = form.text("lastName", messages.get("driver.lastName")).required().maxLength(DriverRules.NAME_MAX)
-                .onBlur(s -> s == null ? null : s.toUpperCase(messages.bundle().getLocale()));
+                .onBlur(s -> s == null ? null : s.toUpperCase(messages.locale()));
         firstName = form.text("firstName", messages.get("driver.firstName")).required().maxLength(DriverRules.NAME_MAX);
         phone = form.text("phone", messages.get("driver.phone")).required().maxLength(20)
                 .rule(Rules.pattern(TextRules.PHONE, "validation.phone")).prompt(messages.get("driver.phone.prompt"))
                 .help(messages.get("driver.phone.help"));
         idNumber = form.text("idNumber", messages.get("driver.idNumber")).maxLength(DriverRules.ID_NUMBER_MAX);
         address = form.textArea("address", messages.get("driver.address")).maxLength(DriverRules.ADDRESS_MAX).rows(2);
-
-        form.section(messages.get("driver.section.licence"));
-        licenceNumber = form.text("licenceNumber", messages.get("driver.licenceNumber")).maxLength(DriverRules.LICENCE_MAX);
-        licenceExpiry = form.date("licenceExpiry", messages.get("driver.licenceExpiry"))
-                .help(messages.get("driver.licenceExpiry.help"));
 
         form.section(messages.get("driver.section.employment"));
         hireDate = form.date("hireDate", messages.get("driver.hireDate")).rule(Rules.notAfter(today));
@@ -96,6 +95,8 @@ final class DriverEditor implements EntityEditor<Driver> {
                 .rule(Rules.range(0, DriverRules.CHILDREN_MAX));
 
         notes = form.textArea("notes", messages.get("driver.notes")).maxLength(DriverRules.NOTES_MAX);
+        drafts = existing == null
+                ? DocumentDrafts.addTo(form, messages, DocumentType.DocumentSubject.DRIVER, documentTypes) : null;
         load(existing);
     }
 
@@ -111,8 +112,6 @@ final class DriverEditor implements EntityEditor<Driver> {
         phone.setValue(d.phone());
         address.setValue(d.address());
         idNumber.setValue(d.idNumber());
-        licenceNumber.setValue(d.licenceNumber());
-        licenceExpiry.setValue(d.licenceExpiry());
         hireDate.setValue(d.hireDate());
         status.setValue(d.status());
         payScheme.setValue(d.payScheme());
@@ -138,6 +137,11 @@ final class DriverEditor implements EntityEditor<Driver> {
         return existing == null ? null : existing.phone();
     }
 
+    /** Documents saisis à la création (vide en modification). */
+    List<DocumentDraft> documentDrafts() {
+        return drafts == null ? List.of() : drafts.drafts();
+    }
+
     @Override
     public Form form() {
         return form;
@@ -148,7 +152,7 @@ final class DriverEditor implements EntityEditor<Driver> {
         Long kids = children.getValue();
         return new Driver(existing == null ? null : existing.id(), existing == null ? 0 : existing.version(),
                 lastName.getValue(), firstName.getValue(), phone.getValue(), address.getValue(), idNumber.getValue(),
-                licenceNumber.getValue(), licenceExpiry.getValue(), hireDate.getValue(), status.getValue(),
+                hireDate.getValue(), status.getValue(),
                 payScheme.getValue(), fixedSalary.getValue(), commissionRate.getValue(), dailyTarget.getValue(),
                 depositAgreed.getValue(), cnssSubject.getValue(), cnssNumber.getValue(), itsSubject.getValue(),
                 maritalStatus.getValue(),

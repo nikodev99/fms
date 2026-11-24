@@ -19,12 +19,13 @@ import java.util.regex.Pattern;
  *   <li>{@code version INTEGER NOT NULL} : verrouillage optimiste, incrémenté à chaque modification</li>
  *   <li>{@code created_at}, {@code updated_at} : horodatage UTC ISO-8601, gérés ici</li>
  * </ul>
- * Une sous-classe décrit seulement sa table, sa lecture et ses colonnes métier. Pas de suppression
- * physique : les données validées ne sont jamais effacées (instructions §15).
+ * Une sous-classe décrit seulement sa table, sa lecture et ses colonnes métier. Les données financières ne sont
+ * jamais effacées (instructions §15) ; seuls les référentiels inutilisés peuvent l'être ({@link #delete}).
  *
  * @param <T> entité du domaine
  */
 public abstract class JdbcRepository<T> {
+
     private static final Pattern IDENTIFIER = Pattern.compile("[a-z_][a-z0-9_]*");
 
     protected final Jdbc jdbc;
@@ -35,7 +36,7 @@ public abstract class JdbcRepository<T> {
         this.clock = clock;
     }
 
-    protected String tableName() {
+    private String tableName() {
         String table = table();
         requireIdentifier(table);
         return table;
@@ -82,7 +83,8 @@ public abstract class JdbcRepository<T> {
         if (excludingId == null) {
             return jdbc.exists("SELECT 1 FROM " + tableName() + " WHERE " + column + " = ? LIMIT 1", value);
         }
-        return jdbc.exists("SELECT 1 FROM " + tableName() + " WHERE " + column + " = ? AND id <> ? LIMIT 1", value, excludingId);
+        return jdbc.exists("SELECT 1 FROM " + tableName() + " WHERE " + column + " = ? AND id <> ? LIMIT 1",
+                value, excludingId);
     }
 
     /** Insère et renvoie l'identifiant attribué. La version de départ est 0. */
@@ -135,6 +137,18 @@ public abstract class JdbcRepository<T> {
             throw new StaleDataException(tableName(), id, expected);
         }
         return expected + 1;
+    }
+
+    /**
+     * Suppression physique, réservée aux référentiels (catégories, types…) : une ligne encore référencée est refusée
+     * par la base (clé étrangère), une ligne protégée par un déclencheur aussi.
+     *
+     * @throws StaleDataException si la ligne a changé ou disparu entre-temps
+     */
+    public void delete(long id, long expectedVersion) {
+        if (jdbc.update("DELETE FROM " + tableName() + " WHERE id = ? AND version = ?", id, expectedVersion) != 1) {
+            throw new StaleDataException(tableName(), id, expectedVersion);
+        }
     }
 
     private static void requireIdentifier(String name) {

@@ -6,6 +6,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import net.synedra.validatorfx.Check;
+import net.synedra.validatorfx.Decoration;
 import net.synedra.validatorfx.Validator;
 import org.gu.fms.desktop.platform.format.Formats;
 import org.gu.fms.desktop.platform.i18n.Messages;
@@ -27,13 +28,14 @@ import java.util.function.Function;
  * form.applyErrors(validationException.errors());     // erreurs du service, sur le bon champ
  * }</pre>
  *
- * Comportement de validation (ValidatorFX)
- * – aucune erreur affichée tant que l'utilisateur n'a rien faite
- * – un champ modifié est vérifié quand il perd le focus, puis à chaque frappe
- * – au premier enregistrement, tous les champs sont vérifiés et le premier champ en erreur reçoivent le focus.
+ * Comportement de validation (ValidatorFX) :
+ *  - aucune erreur affichée tant que l'utilisateur n'a rien fait ;
+ *  - un champ modifié est vérifié quand il perd le focus, puis à chaque frappe ;
+ *  - au premier enregistrement, tous les champs sont vérifiés et le premier champ en erreur reçoit le focus.
  * Mise en page : deux colonnes si la largeur le permet, sinon une ; les sections gardent leur ordre.
  */
 public final class Form {
+
     private static final double TWO_COLUMNS_MIN_WIDTH = 520;
 
     private final Messages messages;
@@ -59,6 +61,10 @@ public final class Form {
 
     public TextInput text(String name, String label) {
         return add(new TextInput(name, label, messages));
+    }
+
+    public PasswordInput password(String name, String label) {
+        return add(new PasswordInput(name, label, messages));
     }
 
     public TextAreaInput textArea(String name, String label) {
@@ -88,6 +94,16 @@ public final class Form {
     /** Choix parmi les valeurs d'une énumération, libellés « enum.Type.VALEUR ». */
     public <E extends Enum<E>> ChoiceInput<E> choice(String name, String label, Class<E> type) {
         return choice(name, label, List.of(type.getEnumConstants()), messages::label);
+    }
+
+    /** Choix multiple par cases à cocher ; valeur = liste (vide si rien n'est coché). */
+    public <T> MultiChoiceInput<T> multi(String name, String label, List<T> options, Function<T, String> labeler) {
+        return add(new MultiChoiceInput<>(name, label, messages, options, labeler));
+    }
+
+    /** Fichiers du poste à joindre (PDF, PNG, JPEG). */
+    public FilesInput files(String name, String label) {
+        return add(new FilesInput(name, label, messages));
     }
 
     public CheckInput check(String name, String label) {
@@ -264,6 +280,27 @@ public final class Form {
                 row++;
                 col = 0;
             }
+        }
+    }
+
+    /** Décoration ValidatorFX : message sous le champ et bordure d'erreur (classe CSS « invalid »). */
+    private static final class FieldDecoration implements Decoration {
+        private final FormField<?, ?> field;
+        private final String message;
+
+        FieldDecoration(FormField<?, ?> field, String message) {
+            this.field = field;
+            this.message = message;
+        }
+
+        @Override
+        public void add(Node target) {
+            field.showError(message);
+        }
+
+        @Override
+        public void remove(Node target) {
+            field.clearError();
         }
     }
 }

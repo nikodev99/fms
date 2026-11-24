@@ -14,7 +14,11 @@ public enum SystemCategory {
     MAINTENANCE("MAINTENANCE", TransactionDirection.OUTFLOW, TransactionNature.OPERATING),
     NET_SALARY("NET_SALARY", TransactionDirection.OUTFLOW, TransactionNature.PAYROLL),
     SALARY_ADVANCE("SALARY_ADVANCE", TransactionDirection.OUTFLOW, TransactionNature.DRIVER_ACCOUNT),
-    ADVANCE_REPAYMENT("ADVANCE_REPAYMENT", TransactionDirection.INFLOW, TransactionNature.DRIVER_ACCOUNT);
+    ADVANCE_REPAYMENT("ADVANCE_REPAYMENT", TransactionDirection.INFLOW, TransactionNature.DRIVER_ACCOUNT),
+    LOAN_DISBURSEMENT("LOAN_DISBURSEMENT", TransactionDirection.INFLOW, TransactionNature.FINANCING),
+    LOAN_PRINCIPAL("LOAN_PRINCIPAL", TransactionDirection.OUTFLOW, TransactionNature.FINANCING),
+    LOAN_INTEREST("LOAN_INTEREST", TransactionDirection.OUTFLOW, TransactionNature.FINANCIAL_CHARGE),
+    LOAN_INSURANCE("LOAN_INSURANCE", TransactionDirection.OUTFLOW, TransactionNature.FINANCIAL_CHARGE);
 
     private final String code;
     private final TransactionDirection direction;

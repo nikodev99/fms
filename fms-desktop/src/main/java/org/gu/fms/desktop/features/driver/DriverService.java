@@ -25,7 +25,8 @@ public final class DriverService extends AuditedCrudService<Driver> {
     private final AssignmentRepository assignments;
 
     @Inject
-    public DriverService(DriverRepository repository, AssignmentRepository assignments, TransactionManager tx, AuditLog audit, Clock clock, AppSettings settings) {
+    public DriverService(DriverRepository repository, AssignmentRepository assignments, TransactionManager tx,
+                         AuditLog audit, Clock clock, AppSettings settings) {
         super(repository, tx, audit, clock, settings);
         this.drivers = repository;
         this.assignments = assignments;
@@ -48,20 +49,12 @@ public final class DriverService extends AuditedCrudService<Driver> {
 
     @Override
     protected void check(Driver d, Driver before, List<FieldError> errors) {
-        if (d.licenceNumber() != null && drivers.licenceTaken(d.licenceNumber(), d.id())) {
-            errors.add(FieldError.of("licenceNumber", "driver.licence.taken", d.licenceNumber()));
-        }
         if (before != null && d.status() == Driver.DriverStatus.LEFT && before.status() != Driver.DriverStatus.LEFT) {
             long open = assignments.countOpenForDriver(d.id(), today());
             if (open > 0) {
                 errors.add(FieldError.of("status", "driver.status.openAssignments", open));
             }
         }
-    }
-
-    @Override
-    protected FieldError uniqueViolation(Driver d) {
-        return FieldError.of("licenceNumber", "driver.licence.taken", d.licenceNumber());
     }
 
     @Override

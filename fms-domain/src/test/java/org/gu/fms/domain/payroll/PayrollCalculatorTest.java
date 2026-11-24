@@ -49,7 +49,7 @@ class PayrollCalculatorTest {
     }
 
     private static Driver driver(PayScheme scheme, Money fixed, Percent rate, boolean cnss) {
-        return new Driver(1L, 0, "MBEMBA", "Jean", "06 474 50 67", null, null, null, null, null, Driver.DriverStatus.ACTIVE,
+        return new Driver(1L, 0, "MBEMBA", "Jean", "06 474 50 67", null, null, null, Driver.DriverStatus.ACTIVE,
                 scheme, fixed, rate, null, null, cnss, null, true, MaritalStatus.SINGLE, 0, null);
     }
 

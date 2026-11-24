@@ -29,20 +29,14 @@ public final class CategoryRules {
     }
 
     /**
-     * Sur une catégorie système, seuls le libellé et l'activation (hors catégories indispensables) changent.
-     * Sur une catégorie utilisée, le sens et la nature sont figés : les transactions passées garderaient sinon
-     * une nature différente de leur catégorie.
+     * Une catégorie système ne change pas du tout (elle est alimentée par un module). Sur une catégorie utilisée, le
+     * sens et la nature sont figés : les transactions passées garderaient sinon une nature différente de leur catégorie.
      */
     public static List<FieldError> validateChange(TransactionCategory before, TransactionCategory after, boolean used) {
         List<FieldError> errors = new ArrayList<>();
         boolean flowChanged = before.direction() != after.direction() || before.nature() != after.nature();
         if (before.system()) {
-            if (flowChanged || before.directEntry() != after.directEntry() || !Objects.equals(before.code(), after.code())) {
-                errors.add(FieldError.of(null, "txCategory.systemLocked"));
-            }
-            if (!after.active()) {
-                errors.add(FieldError.of("active", "txCategory.systemAlwaysActive"));
-            }
+            errors.add(FieldError.of(null, "txCategory.systemLocked"));
         } else if (used && flowChanged) {
             errors.add(FieldError.of("direction", "txCategory.flowLocked"));
         }

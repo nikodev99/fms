@@ -1,5 +1,6 @@
 package org.gu.fms.desktop.platform.services;
 
+import org.gu.fms.desktop.platform.audit.AuditAction;
 import org.gu.fms.desktop.platform.audit.AuditLog;
 import org.gu.fms.desktop.platform.db.DataAccessException;
 import org.gu.fms.desktop.platform.db.StaleDataException;
@@ -31,7 +32,8 @@ public abstract class AuditedCrudService<T> implements CrudService<T> {
     protected final Clock clock;
     protected final AppSettings settings;
 
-    protected AuditedCrudService(JdbcRepository<T> repository, TransactionManager tx, AuditLog audit, Clock clock, AppSettings settings) {
+    protected AuditedCrudService(JdbcRepository<T> repository, TransactionManager tx, AuditLog audit, Clock clock,
+                                 AppSettings settings) {
         this.repository = repository;
         this.tx = tx;
         this.audit = audit;
@@ -74,6 +76,40 @@ public abstract class AuditedCrudService<T> implements CrudService<T> {
         return null;
     }
 
+    /** Élément système : verrouillé (ni modification ni suppression). */
+    protected boolean isSystem(T entity) {
+        return false;
+    }
+
+    /** Voir {@link DeletableService#deletable}. */
+    public boolean deletable(T entity) {
+        return idOf(entity) != null && !isSystem(entity);
+    }
+
+    /** Voir {@link DeletableService#delete} : les sous-classes qui l'exposent implémentent {@link DeletableService}. */
+    public void delete(T entity) {
+        Long id = idOf(entity);
+        if (id == null) {
+            throw new IllegalArgumentException("Suppression d'une entité sans identifiant");
+        }
+        try {
+            tx.runInTransaction(c -> {
+                T before = repository.findById(id)
+                        .orElseThrow(() -> new StaleDataException(auditType(), id, versionOf(entity)));
+                if (isSystem(before)) {
+                    throw ValidationException.of(FieldError.of(null, "reference.systemLocked"));
+                }
+                repository.delete(id, versionOf(entity));
+                audit.event(auditType(), id, AuditAction.DELETE, repository.snapshot(before), null);
+            });
+        } catch (DataAccessException e) {
+            if (e.isForeignKeyViolation()) {
+                throw ValidationException.of(FieldError.of(null, "reference.inUse"));
+            }
+            throw e;
+        }
+    }
+
     @Override
     public List<T> findAll() {
         return repository.findAll();
@@ -88,6 +124,9 @@ public abstract class AuditedCrudService<T> implements CrudService<T> {
                 Long id = idOf(entity);
                 T before = id == null ? null : repository.findById(id)
                         .orElseThrow(() -> new StaleDataException(auditType(), id, versionOf(entity)));
+                if (before != null && isSystem(before)) {
+                    errors.add(FieldError.of(null, "reference.systemLocked"));
+                }
                 check(entity, before, errors);
                 ValidationException.throwIfAny(errors);
                 T ready = prepare(entity, before);

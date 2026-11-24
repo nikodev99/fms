@@ -13,31 +13,28 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-import org.gu.fms.desktop.platform.db.StaleDataException;
 import org.gu.fms.desktop.platform.i18n.Messages;
 import org.gu.fms.desktop.platform.services.CrudService;
+import org.gu.fms.desktop.platform.services.DeletableService;
 import org.gu.fms.desktop.platform.ui.Tone;
 import org.gu.fms.desktop.platform.ui.icon.AppIcon;
 import org.gu.fms.desktop.platform.ui.icon.FmsIcon;
 import org.gu.fms.desktop.platform.ui.Screen;
-import org.gu.fms.desktop.platform.ui.overlay.Drawer;
 import org.gu.fms.desktop.platform.ui.table.DataTable;
-import org.gu.fms.domain.common.FieldError;
-import org.gu.fms.domain.common.ValidationException;
 
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * Écran générique « liste + création/modification » : la base de tous les référentiels
  * (véhicules, chauffeurs, comptes, catégories…).
- * <p>
+ *
  * Fournit : en-tête avec compteur et action principale, recherche, tableau, états vides, tiroir d'édition,
  * enregistrement en tâche de fond, erreurs de validation affichées sur les champs, refus des modifications
  * concurrentes, confirmation avant d'abandonner des modifications.
- * <p>
+ *
  * Une sous-classe décrit seulement : ses textes, ses colonnes et son éditeur.
  *
  * @param <T> entité du domaine
@@ -150,6 +147,15 @@ public abstract class CrudScreen<T> implements Screen, Screen.Embeddable {
      */
     protected CompletableFuture<Boolean> beforeSave(T entity, boolean creating) {
         return CompletableFuture.completedFuture(true);
+    }
+
+    /**
+     * Enregistrement : préparé sur le fil JavaFX (lecture de l'éditeur), exécuté en tâche de fond. Par défaut
+     * {@code service.save(entity)} ; un écran le redéfinit pour enregistrer d'autres éléments dans la même
+     * transaction (ex. documents saisis à la création d'un véhicule).
+     */
+    protected Callable<T> saveWork(EntityEditor<T> editor, T entity, boolean creating) {
+        return () -> service.save(entity);
     }
 
     @Override
@@ -345,6 +351,10 @@ public abstract class CrudScreen<T> implements Screen, Screen.Embeddable {
         }
         if (existing != null) {
             editorActions(existing).forEach(d::leftAction);
+            DeletableService<T> deletable = deletableService();
+            if (deletable != null && deletable.deletable(existing) && !current.readOnly()) {
+                d.leftAction(deleteButton(existing, deletable));
+            }
         }
         if (current.readOnly()) {
             d.readOnly();
@@ -353,10 +363,7 @@ public abstract class CrudScreen<T> implements Screen, Screen.Embeddable {
             d.saveLabel(current.saveLabel(), AppIcon.SAVE);
         }
         d.beforeSave(() -> beforeSave(current.toEntity(), creating));
-        d.onSave(() -> {
-                    T entity = current.toEntity();
-                    return () -> service.save(entity);
-                })
+        d.onSave(() -> saveWork(current, current.toEntity(), creating))
                 .onSuccess(saved -> {
                     ui.toasts.success(savedMessage(saved, creating));
                     Object id = identityOf(saved);
@@ -364,6 +371,33 @@ public abstract class CrudScreen<T> implements Screen, Screen.Embeddable {
                 });
         this.drawer = d;
         d.open();
+    }
+
+    @SuppressWarnings("unchecked")
+    private DeletableService<T> deletableService() {
+        return service instanceof DeletableService<?> d ? (DeletableService<T>) d : null;
+    }
+
+    /** « Supprimer » : élément inutilisé seulement ; sinon la base refuse et le message invite à le désactiver. */
+    private Button deleteButton(T existing, DeletableService<T> deletable) {
+        Button delete = new Button(messages.get("action.delete"), new FmsIcon(AppIcon.REMOVE, 16));
+        delete.getStyleClass().add("danger");
+        delete.setOnAction(e -> ui.dialogs.confirm(messages.get("reference.delete.title"),
+                        messages.get("reference.delete.message"), messages.get("action.delete"), Tone.DANGER)
+                .thenAccept(ok -> {
+                    if (ok) {
+                        ui.run(() -> {
+                            deletable.delete(existing);
+                            return existing;
+                        }, x -> messages.get("reference.deleted"), x -> {
+                            if (drawer != null) {
+                                drawer.close();
+                            }
+                            reload(null);
+                        });
+                    }
+                }));
+        return delete;
     }
 
     /** Éditeur ouvert (pour les tests et les sous-classes). */

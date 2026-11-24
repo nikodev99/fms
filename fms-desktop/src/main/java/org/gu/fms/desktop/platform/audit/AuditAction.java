@@ -14,6 +14,10 @@ public enum AuditAction {
     VALIDATE,
     /** Paiement enregistré. */
     PAY,
-    /** Annulation d'un bulletin. */
-    CANCEL
+    /** Annulation d'un bulletin, d'un emprunt. */
+    CANCEL,
+    /** Suppression d'un élément de référentiel inutilisé (catégorie, type…). */
+    DELETE,
+    /** Connexion, déconnexion, échec de connexion, changement de mot de passe. */
+    SECURITY
 }

@@ -12,15 +12,16 @@ import java.util.ResourceBundle;
 /**
  * Textes de l'interface (fichier i18n/messages*.properties, UTF-8).
  * <p>
- * Conventions de clés
- * – nav.*, action.*, common.* : textes partagés
- * – enum.&lt;Type&gt;.&lt;VALEUR&gt; : libellés d'énumérations ({@link #label(Enum)})
- * – validation.* et &lt;module&gt;.* : messages d'erreur produits par le domaine ({@link #error(FieldError)}).
+ * Conventions de clés :
+ *  - nav.*, action.*, common.* : textes partagés ;
+ *  - enum.&lt;Type&gt;.&lt;VALEUR&gt; : libellés d'énumérations ({@link #label(Enum)}) ;
+ *  - validation.* et &lt;module&gt;.* : messages d'erreur produits par le domaine ({@link #error(FieldError)}).
  * Apostrophe typographique ’ dans les textes : l'apostrophe droite ' a un sens spécial pour MessageFormat.
- * Une clé absente s'affiche « ! Clé ! » pour être repérée immédiatement.
+ * Une clé absente s'affiche « !clé! » pour être repérée immédiatement.
  */
 @Singleton
 public final class Messages {
+
     private final ResourceBundle bundle;
     private final AppSettings settings;
 
@@ -34,14 +35,14 @@ public final class Messages {
         String pattern;
         try {
             pattern = bundle.getString(key);
-        }catch (MissingResourceException e) {
+        } catch (MissingResourceException e) {
             return "!" + key + "!";
         }
         return args.length == 0 ? pattern : new MessageFormat(pattern, settings.locale()).format(args);
     }
 
     public String label(Enum<?> value) {
-        return value == null ? "": get("enum." + value.getDeclaringClass().getSimpleName() + "." + value.name());
+        return value == null ? "" : get("enum." + value.getDeclaringClass().getSimpleName() + "." + value.name());
     }
 
     public String error(FieldError error) {
@@ -50,5 +51,13 @@ public final class Messages {
 
     public ResourceBundle bundle() {
         return bundle;
+    }
+
+    /**
+     * Langue d'affichage (dates, noms des mois et des jours). Toujours celle des paramètres : la locale du fichier de
+     * messages chargé peut être la racine.
+     */
+    public java.util.Locale locale() {
+        return settings.locale();
     }
 }

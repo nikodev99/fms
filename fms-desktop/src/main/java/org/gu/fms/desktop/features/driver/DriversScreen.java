@@ -5,8 +5,13 @@ import javafx.collections.FXCollections;
 import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListCell;
+import org.gu.fms.desktop.features.document.ComplianceService;
+import org.gu.fms.desktop.features.document.DocumentDraft;
+import org.gu.fms.desktop.features.document.DocumentService;
+import org.gu.fms.desktop.features.document.DocumentTypeRepository;
 import org.gu.fms.desktop.features.settings.FleetPreferencesService;
 import org.gu.fms.desktop.features.vehicle.VehicleRepository;
+import org.gu.fms.desktop.platform.db.TransactionManager;
 import org.gu.fms.desktop.platform.settings.AppSettings;
 import org.gu.fms.desktop.platform.ui.Tone;
 import org.gu.fms.desktop.platform.ui.crud.CrudContext;
@@ -15,9 +20,12 @@ import org.gu.fms.desktop.platform.ui.crud.EntityEditor;
 import org.gu.fms.desktop.platform.ui.icon.AppIcon;
 import org.gu.fms.desktop.platform.ui.table.Badge;
 import org.gu.fms.desktop.platform.ui.table.DataTable;
+import org.gu.fms.domain.document.DocumentStatus;
+import org.gu.fms.domain.document.DocumentType;
+import org.gu.fms.domain.document.DocumentType.DocumentSubject;
 import org.gu.fms.domain.driver.Driver;
+import org.gu.fms.domain.driver.Driver.DriverStatus;
 import org.gu.fms.domain.driver.DriverAssignment;
-import org.gu.fms.domain.driver.DriverRules;
 import org.gu.fms.domain.vehicle.Vehicle;
 
 import java.time.Clock;
@@ -26,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 /** Chauffeurs › liste et fiche. La colonne « Véhicule » montre les affectations en cours aujourd'hui. */
@@ -37,11 +46,25 @@ public final class DriversScreen extends CrudScreen<Driver> {
     private final VehicleRepository vehicles;
     private final FleetPreferencesService prefs;
     private volatile Map<Long, String> currentVehicle = Map.of();
-    private volatile long alertDays = 30;
+    private volatile List<DocumentType> documentTypes = List.of();
+    private volatile Map<Long, DocumentStatus> compliance = Map.of();
+    private final DriverService service;
+    private final DocumentService documents;
+    private final DocumentTypeRepository types;
+    private final ComplianceService complianceService;
+    private final TransactionManager tx;
 
     @Inject
-    public DriversScreen(CrudContext ui, DriverService service, AssignmentRepository assignments, VehicleRepository vehicles, FleetPreferencesService prefs, Clock clock, AppSettings settings) {
+    public DriversScreen(CrudContext ui, DriverService service, AssignmentRepository assignments,
+                         VehicleRepository vehicles, FleetPreferencesService prefs, Clock clock, AppSettings settings,
+                         DocumentService documents, DocumentTypeRepository types, ComplianceService complianceService,
+                         TransactionManager tx) {
         super(ui, service);
+        this.service = service;
+        this.documents = documents;
+        this.types = types;
+        this.complianceService = complianceService;
+        this.tx = tx;
         this.assignments = assignments;
         this.vehicles = vehicles;
         this.prefs = prefs;
@@ -68,7 +91,22 @@ public final class DriversScreen extends CrudScreen<Driver> {
         Map<Long, String> text = new HashMap<>();
         byDriver.forEach((id, list) -> text.put(id, String.join(", ", list)));
         currentVehicle = text;
-        alertDays = prefs.load().documentAlertDays();
+        documentTypes = types.findAll();
+        compliance = complianceService.worstBy(DocumentSubject.DRIVER);
+    }
+
+    @Override
+    protected Callable<Driver> saveWork(EntityEditor<Driver> editor, Driver entity,
+                                        boolean creating) {
+        List<DocumentDraft> drafts = creating && editor instanceof DriverEditor e ? e.documentDrafts() : List.of();
+        if (drafts.isEmpty()) {
+            return () -> service.save(entity);
+        }
+        return () -> tx.inTransaction(c -> {
+            Driver saved = service.save(entity);
+            documents.createFor(saved.id(), drafts);
+            return saved;
+        });
     }
 
     @Override
@@ -114,18 +152,16 @@ public final class DriversScreen extends CrudScreen<Driver> {
         };
     }
 
-    private Badge licence(Driver d) {
-        LocalDate today = today();
-        if (d.licenceExpiry() == null) {
-            return new Badge(messages.get("driver.licence.unknown"), Tone.NEUTRAL);
+    private Badge documentsBadge(Driver d) {
+        DocumentStatus s = compliance.get(d.id());
+        if (s == null) {
+            return new Badge(messages.get("common.none"), Tone.NEUTRAL);
         }
-        if (DriverRules.licenceExpired(d, today)) {
-            return new Badge(messages.get("driver.licence.expired"), Tone.DANGER);
-        }
-        if (DriverRules.licenceExpiresWithin(d, today, alertDays)) {
-            return new Badge(messages.get("driver.licence.soon", ui.formats().date(d.licenceExpiry())), Tone.WARNING);
-        }
-        return new Badge(messages.get("driver.licence.valid", ui.formats().date(d.licenceExpiry())), Tone.SUCCESS);
+        return new Badge(messages.label(s), switch (s) {
+            case EXPIRED -> Tone.DANGER;
+            case MISSING, EXPIRING -> Tone.WARNING;
+            case VALID -> Tone.SUCCESS;
+        });
     }
 
     @Override
@@ -136,10 +172,10 @@ public final class DriversScreen extends CrudScreen<Driver> {
                 .setMinWidth(110);
         table.textColumn(messages.get("drivers.column.pay"), this::pay, 190).setMinWidth(150);
         table.moneyColumn(messages.get("drivers.column.dailyTarget"), Driver::dailyTarget, 120).setMinWidth(100);
-        table.badgeColumn(messages.get("drivers.column.licence"), this::licence, 175).setMinWidth(165);
+        table.badgeColumn(messages.get("drivers.column.documents"), this::documentsBadge, 130).setMinWidth(115);
         table.badgeColumn(messages.get("driver.status"), d -> new Badge(messages.label(d.status()), tone(d.status())), 100)
                 .setMinWidth(90);
-        table.searchBy(d -> String.join(" ", d.displayName(), d.phone(), String.valueOf(d.licenceNumber()),
+        table.searchBy(d -> String.join(" ", d.displayName(), d.phone(),
                 currentVehicle.getOrDefault(d.id(), ""), messages.label(d.status())));
     }
 
@@ -147,8 +183,8 @@ public final class DriversScreen extends CrudScreen<Driver> {
     protected Node filters() {
         List<Driver.DriverStatus> options = new ArrayList<>();
         options.add(null);
-        options.addAll(List.of(Driver.DriverStatus.values()));
-        ComboBox<Driver.DriverStatus> combo = new ComboBox<>(FXCollections.observableArrayList(options));
+        options.addAll(List.of(DriverStatus.values()));
+        ComboBox<DriverStatus> combo = new ComboBox<>(FXCollections.observableArrayList(options));
         combo.getStyleClass().add("filter-combo");
         combo.setButtonCell(cell());
         combo.setCellFactory(list -> cell());
@@ -157,10 +193,10 @@ public final class DriversScreen extends CrudScreen<Driver> {
         return combo;
     }
 
-    private ListCell<Driver.DriverStatus> cell() {
+    private ListCell<DriverStatus> cell() {
         return new ListCell<>() {
             @Override
-            protected void updateItem(Driver.DriverStatus item, boolean empty) {
+            protected void updateItem(DriverStatus item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(empty ? null : item == null ? messages.get("drivers.filter.all") : messages.label(item));
             }
@@ -169,7 +205,7 @@ public final class DriversScreen extends CrudScreen<Driver> {
 
     @Override
     protected EntityEditor<Driver> createEditor(Driver existing) {
-        return new DriverEditor(ui.forms(), messages, this::today, existing);
+        return new DriverEditor(ui.forms(), messages, this::today, existing, documentTypes);
     }
 
     @Override
@@ -182,7 +218,7 @@ public final class DriversScreen extends CrudScreen<Driver> {
         return d.id();
     }
 
-    static Tone tone(Driver.DriverStatus status) {
+    static Tone tone(DriverStatus status) {
         return switch (status) {
             case ACTIVE -> Tone.SUCCESS;
             case SUSPENDED -> Tone.WARNING;
@@ -190,4 +226,3 @@ public final class DriversScreen extends CrudScreen<Driver> {
         };
     }
 }
-

@@ -5,7 +5,7 @@ import org.kordamp.ikonli.materialdesign2.*;
 
 /**
  * Catalogue des icônes de l'application, par rôle et non par dessin.
- *
+ * <p>
  * Les écrans utilisent toujours ces noms ({@code AppIcon.VEHICLE}), jamais un code Ikonli direct :
  * changer de jeu d'icônes ou de dessin se fait ici, une seule fois.
  * Jeu utilisé : Material Design Icons (Ikonli, pack materialdesign2).
@@ -23,7 +23,6 @@ public enum AppIcon {
     PAYROLL(MaterialDesignA.ACCOUNT_CASH_OUTLINE),
     LOAN(MaterialDesignB.BANK_OUTLINE),
     REPORTS(MaterialDesignF.FILE_CHART_OUTLINE),
-    SIMULATION(MaterialDesignC.CALCULATOR_VARIANT_OUTLINE),
     SETTINGS(MaterialDesignC.COG_OUTLINE),
 
     // Actions
@@ -57,6 +56,16 @@ public enum AppIcon {
     RESTORE(MaterialDesignD.DATABASE_IMPORT_OUTLINE),
     IMAGE(MaterialDesignI.IMAGE_OUTLINE),
     REMOVE(MaterialDesignD.DELETE_OUTLINE),
+    PDF(MaterialDesignF.FILE_PDF_BOX),
+    DOWNLOAD(MaterialDesignD.DOWNLOAD),
+    PREVIEW(MaterialDesignE.EYE_OUTLINE),
+    ATTACHMENT(MaterialDesignP.PAPERCLIP),
+    ZOOM_IN(MaterialDesignM.MAGNIFY_PLUS_OUTLINE),
+    ZOOM_OUT(MaterialDesignM.MAGNIFY_MINUS_OUTLINE),
+    FIT_WIDTH(MaterialDesignA.ARROW_EXPAND_HORIZONTAL),
+    ROTATE(MaterialDesignR.ROTATE_RIGHT),
+    OUT_OF_SERVICE(MaterialDesignC.CAR_OFF),
+    KEY(MaterialDesignK.KEY_OUTLINE),
 
     // Paramètres et sous-sections
     COMPANY(MaterialDesignD.DOMAIN),
@@ -73,6 +82,12 @@ public enum AppIcon {
     PLAN(MaterialDesignC.CALENDAR_CLOCK),
     THRESHOLD(MaterialDesignG.GAUGE),
     VERIFIED(MaterialDesignC.CHECK_DECAGRAM_OUTLINE),
+    USERS(MaterialDesignA.ACCOUNT_KEY_OUTLINE),
+    USER(MaterialDesignA.ACCOUNT_CIRCLE_OUTLINE),
+    SECURITY(MaterialDesignS.SHIELD_ACCOUNT_OUTLINE),
+    CALENDAR(MaterialDesignC.CALENDAR_MONTH_OUTLINE),
+    CHART(MaterialDesignC.CHART_BAR),
+    KPI(MaterialDesignG.GAUGE),
 
     // Thème
     THEME_LIGHT(MaterialDesignW.WHITE_BALANCE_SUNNY),
