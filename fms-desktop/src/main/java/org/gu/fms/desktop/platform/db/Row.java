@@ -26,6 +26,11 @@ public final class Row {
         return rs.getString(column);
     }
 
+    /** Contenu binaire (BLOB), ou null. */
+    public byte[] bytes(String column) throws SQLException {
+        return rs.getBytes(column);
+    }
+
     public Long longOrNull(String column) throws SQLException {
         long value = rs.getLong(column);
         return rs.wasNull() ? null : value;
@@ -65,7 +70,8 @@ public final class Row {
         try {
             return Enum.valueOf(type, value);
         } catch (IllegalArgumentException e) {
-            throw new SQLException("Valeur inconnue '" + value + "' pour " + type.getSimpleName() + " dans la colonne " + column, e);
+            throw new SQLException("Valeur inconnue '" + value + "' pour " + type.getSimpleName()
+                    + " dans la colonne " + column, e);
         }
     }
 

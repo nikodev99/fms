@@ -53,6 +53,13 @@ public final class KpiStrip extends GridPane {
             }
         }
 
+        /** Indicateur cliquable (ex. ouvre le module concerné). */
+        public Kpi onClick(Runnable action) {
+            box.getStyleClass().add("clickable");
+            box.setOnMouseClicked(e -> action.run());
+            return this;
+        }
+
         public void set(String valueText, String captionText, Tone tone) {
             value.setText(valueText);
             caption.setText(captionText == null ? "" : captionText);

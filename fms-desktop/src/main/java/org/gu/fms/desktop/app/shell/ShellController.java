@@ -20,6 +20,10 @@ import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import org.gu.fms.desktop.app.AppPaths;
 import org.gu.fms.desktop.app.AppRoutes;
+import org.gu.fms.desktop.app.SessionFlow;
+import org.gu.fms.desktop.features.alert.AlertCenter;
+import org.gu.fms.desktop.features.alert.AlertsPanel;
+import org.gu.fms.desktop.platform.brand.BrandAssets;
 import org.gu.fms.desktop.platform.i18n.Messages;
 import org.gu.fms.desktop.platform.session.UserSession;
 import org.gu.fms.desktop.platform.ui.icon.AppIcon;
@@ -30,6 +34,7 @@ import org.gu.fms.desktop.platform.ui.nav.RouteRegistry;
 import org.gu.fms.desktop.platform.ui.theme.ThemeManager;
 import org.gu.fms.desktop.platform.ui.theme.ThemeMode;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -40,7 +45,7 @@ import java.util.Map;
 /**
  * Coque de l'application : menu latéral (généré depuis {@link RouteRegistry}), barre supérieure,
  * zone de contenu et barre d'état.
- * <p>
+ *
  * Menu latéral réductible :
  *  - bouton ☰ de la barre supérieure : déplié (icônes + libellés) ↔ réduit (icônes seules, info-bulles) ;
  *  - automatique : sous {@value #NARROW_WIDTH} px de largeur de fenêtre le menu se réduit, au-dessus il se déplie
@@ -53,8 +58,6 @@ public final class ShellController {
     private static final double EXPANDED_WIDTH = 248;
     private static final double COLLAPSED_WIDTH = 68;
     private static final Duration ANIMATION = Duration.millis(160);
-    private static final String LOGO = "/com/globalunderscore/fms/desktop/images/fms-logo-128.png";
-
     private final Navigator navigator;
     private final RouteRegistry routes;
     private final ThemeManager theme;
@@ -62,6 +65,9 @@ public final class ShellController {
     private final UserSession session;
     private final AppPaths paths;
     private final SidebarPreferences sidebarPrefs;
+    private final SessionFlow sessionFlow;
+    private final AlertCenter alertCenter;
+    private final AlertsPanel alertsPanel;
     private final Map<Route, Button> navButtons = new HashMap<>();
     private final List<Label> sectionLabels = new ArrayList<>();
     private final List<Separator> sectionSeparators = new ArrayList<>();
@@ -92,10 +98,16 @@ public final class ShellController {
     @FXML private Label userRole;
     @FXML private Button settingsButton;
     @FXML private Label databaseLabel;
+    @FXML private Button alertsButton;
+    @FXML private Label alertsBadge;
+    @FXML private MenuButton userMenu;
+    @FXML private MenuItem changePasswordItem;
+    @FXML private MenuItem logoutItem;
 
     @Inject
     public ShellController(Navigator navigator, RouteRegistry routes, ThemeManager theme, Messages messages,
-                           UserSession session, AppPaths paths, SidebarPreferences sidebarPrefs) {
+                           UserSession session, AppPaths paths, SidebarPreferences sidebarPrefs,
+                           SessionFlow sessionFlow, AlertCenter alertCenter, AlertsPanel alertsPanel) {
         this.navigator = navigator;
         this.routes = routes;
         this.theme = theme;
@@ -103,6 +115,9 @@ public final class ShellController {
         this.session = session;
         this.paths = paths;
         this.sidebarPrefs = sidebarPrefs;
+        this.sessionFlow = sessionFlow;
+        this.alertCenter = alertCenter;
+        this.alertsPanel = alertsPanel;
     }
 
     @FXML
@@ -113,19 +128,54 @@ public final class ShellController {
         loadLogo();
         bindSidebar();
 
-        UserSession.User user = session.currentUser();
-        userInitials.setText(user.initials());
-        userName.setText(user.displayName());
-        userRole.setText(messages.label(user.role()));
+        showUser(session.currentUser());
+        session.currentUserProperty().addListener((obs, o, user) -> {
+            showUser(user);
+            buildNavigation();
+            applyCollapsed(collapsed, false);
+        });
         settingsButton.setOnAction(e -> navigator.navigate(AppRoutes.SETTINGS));
+        changePasswordItem.setOnAction(e -> sessionFlow.changePassword());
+        logoutItem.setOnAction(e -> sessionFlow.logout());
+        alertsButton.setOnAction(e -> alertsPanel.open());
+        alertsBadge.textProperty().bind(alertCenter.totalCountProperty().asString());
+        alertsBadge.visibleProperty().bind(alertCenter.totalCountProperty().greaterThan(0));
+        alertCenter.criticalCountProperty().addListener((obs, o, n) -> {
+            alertsBadge.getStyleClass().remove("critical");
+            if (n.intValue() > 0) {
+                alertsBadge.getStyleClass().add("critical");
+            }
+        });
         databaseLabel.setText(messages.get("shell.database", paths.databaseFile().getFileName()));
 
         navigator.currentProperty().addListener((obs, previous, current) -> onRouteChanged(previous, current));
     }
 
+    private void showUser(UserSession.User user) {
+        boolean signed = session.isSignedIn();
+        userInitials.setText(signed ? user.initials() : "");
+        userName.setText(signed ? user.displayName() : "");
+        userRole.setText(signed ? messages.label(user.role()) : "");
+        userMenu.setText(signed ? user.displayName() : "");
+        userMenu.setVisible(signed);
+        changePasswordItem.setVisible(signed && user.id() != null);
+        boolean owner = session.isOwner();
+        settingsButton.setVisible(owner);
+        settingsButton.setManaged(owner);
+    }
+
+    /** Menu des modules ouverts à l'utilisateur connecté (reconstruit à chaque connexion). */
     private void buildNavigation() {
+        navBox.getChildren().clear();
+        navButtons.clear();
+        sectionLabels.clear();
+        sectionSeparators.clear();
         for (Map.Entry<String, List<Route>> section : routes.sections().entrySet()) {
-            Label title = new Label(messages.get(section.getKey()).toUpperCase(messages.bundle().getLocale()));
+            List<Route> visible = section.getValue().stream().filter(navigator::canOpen).toList();
+            if (visible.isEmpty()) {
+                continue;
+            }
+            Label title = new Label(messages.get(section.getKey()).toUpperCase(messages.locale()));
             title.getStyleClass().add("nav-section");
             Separator separator = new Separator();
             separator.getStyleClass().add("nav-separator");
@@ -134,7 +184,7 @@ public final class ShellController {
             sectionLabels.add(title);
             sectionSeparators.add(separator);
             navBox.getChildren().addAll(title, separator);
-            for (Route route : section.getValue()) {
+            for (Route route : visible) {
                 Button b = new Button(messages.get(route.titleKey()), new FmsIcon(route.icon()));
                 b.getStyleClass().add("nav-item");
                 b.setMaxWidth(Double.MAX_VALUE);
@@ -257,6 +307,8 @@ public final class ShellController {
             navButtons.get(previous).getStyleClass().remove("active");
         }
         if (current == null) {
+            breadcrumbSection.setText("");
+            breadcrumbPage.setText("");
             return;
         }
         Button b = navButtons.get(current);
@@ -292,18 +344,18 @@ public final class ShellController {
         });
     }
 
+    /** Logo livré (voir {@link BrandAssets}) ; à défaut, le monogramme « FMS » reste affiché. */
     private void loadLogo() {
-        try (InputStream in = ShellController.class.getResourceAsStream(LOGO)) {
-            if (in == null) {
+        BrandAssets.logo(128).ifPresent(bytes -> {
+            Image image = new Image(new ByteArrayInputStream(bytes));
+            if (image.isError()) {
                 return;
             }
-            logoImage.setImage(new Image(in));
+            logoImage.setImage(image);
             logoImage.setVisible(true);
             logoImage.setManaged(true);
             logoFallback.setVisible(false);
             logoFallback.setManaged(false);
-        } catch (IOException e) {
-            // logo illisible : le monogramme reste affiché
-        }
+        });
     }
 }

@@ -1,8 +1,12 @@
 package org.gu.fms.desktop.features.vehicle;
 
+import javafx.scene.Node;
+import org.gu.fms.desktop.features.document.DocumentDraft;
+import org.gu.fms.desktop.features.document.DocumentDrafts;
 import org.gu.fms.desktop.platform.i18n.Messages;
 import org.gu.fms.desktop.platform.ui.crud.EntityEditor;
 import org.gu.fms.desktop.platform.ui.form.*;
+import org.gu.fms.domain.document.DocumentType;
 import org.gu.fms.domain.money.Money;
 import org.gu.fms.domain.vehicle.Vehicle;
 import org.gu.fms.domain.vehicle.Vehicle.AcquisitionMethod;
@@ -14,7 +18,9 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
+/** Formulaire de création / modification d'un véhicule. */
 final class VehicleEditor implements EntityEditor<Vehicle> {
+
     private static final Pattern REGISTRATION = Pattern.compile("[A-Za-z0-9 -]+");
 
     private final Messages messages;
@@ -28,19 +34,24 @@ final class VehicleEditor implements EntityEditor<Vehicle> {
     private final TextInput model;
     private final ChoiceInput<Vehicle.VehicleStatus> status;
     private final DateInput acquisitionDate;
-    private final ChoiceInput<Vehicle.AcquisitionMethod> acquisitionMethod;
+    private final ChoiceInput<AcquisitionMethod> acquisitionMethod;
     private final MoneyInput purchasePrice;
     private final NumberInput currentMileage;
     private final MoneyInput repairThreshold;
     private final TextAreaInput notes;
+    private final DocumentDrafts drafts;
+    private final Node documentsPanel;
 
     /**
      * @param categories       toutes les catégories ; seules les actives (et celle du véhicule) sont proposées
      * @param defaultThreshold seuil de réparations proposé pour un nouveau véhicule (Paramètres › Flotte), ou null
+     * @param documentsPanel   documents du véhicule et de ses chauffeurs (fiche existante), ou null
      */
     VehicleEditor(Forms forms, Messages messages, Supplier<LocalDate> today, List<VehicleCategory> categories,
-                  Money defaultThreshold, Vehicle existing) {
+                  Money defaultThreshold, Vehicle existing, List<DocumentType> documentTypes,
+                  Node documentsPanel) {
         this.messages = messages;
+        this.documentsPanel = documentsPanel;
         this.existing = existing;
         this.categories = categories;
         this.defaultThreshold = defaultThreshold;
@@ -74,6 +85,8 @@ final class VehicleEditor implements EntityEditor<Vehicle> {
         repairThreshold = form.money("repairThreshold", messages.get("vehicle.repairThreshold"))
                 .help(messages.get("vehicle.repairThreshold.help"));
         notes = form.textArea("notes", messages.get("vehicle.notes")).maxLength(VehicleRules.NOTES_MAX);
+        drafts = existing == null
+                ? DocumentDrafts.addTo(form, messages, DocumentType.DocumentSubject.VEHICLE, documentTypes) : null;
 
         load(existing);
     }
@@ -98,6 +111,11 @@ final class VehicleEditor implements EntityEditor<Vehicle> {
         notes.setValue(v.notes());
     }
 
+    /** Documents saisis à la création (vide en modification). */
+    List<DocumentDraft> documentDrafts() {
+        return drafts == null ? List.of() : drafts.drafts();
+    }
+
     @Override
     public String title() {
         return existing == null
@@ -108,6 +126,11 @@ final class VehicleEditor implements EntityEditor<Vehicle> {
     @Override
     public String subtitle() {
         return existing == null ? null : existing.make() + " " + existing.model();
+    }
+
+    @Override
+    public Node header() {
+        return documentsPanel;
     }
 
     @Override

@@ -6,6 +6,7 @@ import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.SequentialTransition;
 import javafx.geometry.Pos;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.util.Duration;
@@ -18,6 +19,7 @@ import org.gu.fms.desktop.platform.ui.icon.FmsIcon;
  */
 @Singleton
 public final class Toast {
+
     private static final Duration SHORT = Duration.seconds(4);
     private static final Duration LONG = Duration.seconds(7);
     private static final int MAX_VISIBLE = 4;
@@ -45,15 +47,25 @@ public final class Toast {
         show(Tone.DANGER, message);
     }
 
-    private void show(Tone tone, String message) {
-        FmsIcon icon = new FmsIcon(Dialogs.iconFor(tone), 18);
+    public void show(Tone tone, String message) {
+        show(tone, message, null, null);
+    }
 
+    /** Notification avec un bouton (ex. « Ouvrir » après un téléchargement) ; elle reste affichée plus longtemps. */
+    public void show(Tone tone, String message, String actionLabel, Runnable action) {
+        FmsIcon icon = new FmsIcon(Dialogs.iconFor(tone), 18);
         Label text = new Label(message);
         text.setWrapText(true);
         text.setMaxWidth(340);
         text.getStyleClass().add("toast-text");
 
         HBox toast = new HBox(10, icon, text);
+        Button button = null;
+        if (actionLabel != null && action != null) {
+            button = new Button(actionLabel);
+            button.getStyleClass().add("toast-action");
+            toast.getChildren().add(button);
+        }
         toast.setAlignment(Pos.CENTER_LEFT);
         toast.getStyleClass().addAll("toast", tone.styleClass());
         toast.setOpacity(0);
@@ -66,7 +78,8 @@ public final class Toast {
 
         FadeTransition in = new FadeTransition(Duration.millis(160), toast);
         in.setToValue(1);
-        PauseTransition stay = new PauseTransition(tone == Tone.DANGER || tone == Tone.WARNING ? LONG : SHORT);
+        PauseTransition stay = new PauseTransition(
+                tone == Tone.DANGER || tone == Tone.WARNING || button != null ? LONG : SHORT);
         FadeTransition out = new FadeTransition(Duration.millis(220), toast);
         out.setToValue(0);
         SequentialTransition life = new SequentialTransition(in, stay, out);
@@ -75,6 +88,13 @@ public final class Toast {
             life.stop();
             layer.remove(toast);
         });
+        if (button != null) {
+            button.setOnAction(e -> {
+                life.stop();
+                layer.remove(toast);
+                action.run();
+            });
+        }
         life.play();
     }
 }

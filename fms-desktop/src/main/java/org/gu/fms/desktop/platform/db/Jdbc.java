@@ -16,7 +16,8 @@ import java.util.Optional;
 /**
  * Exécution SQL paramétrée. Toujours des paramètres liés (jamais de concaténation de valeurs).
  * <p>
- * Types de paramètres acceptés : null, String, Long, Integer, Boolean, LocalDate, Instant, Enum, Money.
+ * Types de paramètres acceptés : null, String, Long, Integer, Boolean, LocalDate, Instant, Enum, Money,
+ * Percent (en points de base).
  */
 @Singleton
 public final class Jdbc {
@@ -127,6 +128,8 @@ public final class Jdbc {
             ps.setLong(index, m.minor());
         } else if (value instanceof Percent p) {
             ps.setLong(index, p.basisPoints());
+        } else if (value instanceof byte[] bytes) {
+            ps.setBytes(index, bytes);
         } else {
             throw new IllegalArgumentException("Type de paramètre SQL non pris en charge : " + value.getClass().getName());
         }

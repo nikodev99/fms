@@ -6,6 +6,7 @@ import jakarta.inject.Singleton;
 import org.gu.fms.desktop.platform.db.DataAccessException;
 import org.gu.fms.desktop.platform.db.Database;
 import org.gu.fms.desktop.platform.db.migration.MigrationEngine;
+import org.gu.fms.desktop.platform.session.UserSession;
 import org.gu.fms.desktop.platform.settings.SettingsStore;
 
 import java.io.IOException;
@@ -45,13 +46,16 @@ public final class BackupService {
     private static final Duration AUTO_INTERVAL = Duration.ofHours(24);
 
     private final Database database;
+    private final UserSession session;
     private final BackupLocation location;
     private final Clock clock;
     private final SettingsStore settings;
     private final Provider<MigrationEngine> migrations;
 
     @Inject
-    public BackupService(Database database, BackupLocation location, Clock clock, SettingsStore settings, Provider<MigrationEngine> migrations) {
+    public BackupService(Database database, BackupLocation location, Clock clock, SettingsStore settings,
+                         Provider<MigrationEngine> migrations, UserSession session) {
+        this.session = session;
         this.database = database;
         this.location = location;
         this.clock = clock;
@@ -87,7 +91,8 @@ public final class BackupService {
         if (keep < KEEP_MIN || keep > KEEP_MAX) {
             throw new IllegalArgumentException("Nombre de sauvegardes à garder hors limites : " + keep);
         }
-        settings.putAll(Map.of(KEY_AUTO_ENABLED, Boolean.toString(enabled), KEY_AUTO_KEEP, Integer.toString(keep)), null);
+        settings.putAll(Map.of(KEY_AUTO_ENABLED, Boolean.toString(enabled), KEY_AUTO_KEEP, Integer.toString(keep)),
+                null);
     }
 
     public BackupFile createManual() {
@@ -177,6 +182,7 @@ public final class BackupService {
      * @return la sauvegarde de sécurité faite avant le remplacement
      */
     public BackupFile restore(Path candidate) throws Exception {
+        session.requireOwner();
         verify(candidate);
         BackupFile safety = create("avant-restauration", BackupKind.BEFORE_RESTORE);
         database.close();

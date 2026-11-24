@@ -54,6 +54,18 @@
     -fms-sidebar-active-text: #ffffff;
     -fms-sidebar-icon: #8ea4c2;
 
+    /* Calendrier des versements et graphiques */
+    -fms-cal-full: #2e9d6a;
+    -fms-cal-partial: #f2b33d;
+    -fms-cal-missed: #d6453a;
+    -fms-cal-exempt: #8796ab;
+    -fms-cal-rest: #dfe3e9;
+    -fms-cal-on-strong: #ffffff;
+    -fms-cal-on-partial: #3b2a00;
+    -fms-chart-1: #1d5bb8;
+    -fms-chart-2: #2e9d6a;
+    -fms-chart-3: #d6453a;
+
     /* Alignement AtlantaFX */
     -color-bg-default: -fms-surface;
     -color-bg-subtle: -fms-surface-alt;
@@ -127,6 +139,17 @@
     -fms-sidebar-active: #1a2638;
     -fms-sidebar-active-text: #e6eaf0;
     -fms-sidebar-icon: #6f7b8c;
+
+    -fms-cal-full: #2f8f63;
+    -fms-cal-partial: #c98d27;
+    -fms-cal-missed: #c0453a;
+    -fms-cal-exempt: #5c6b80;
+    -fms-cal-rest: #262d38;
+    -fms-cal-on-strong: #ffffff;
+    -fms-cal-on-partial: #1c1300;
+    -fms-chart-1: #6ea8f5;
+    -fms-chart-2: #4cc38a;
+    -fms-chart-3: #f27a6a;
 
     -fx-base: #1d232c;
     -fx-background: -fms-bg;
@@ -729,3 +752,186 @@
 
 /* Motif saisi dans un dialogue */
 .dialog-input { -fx-pref-height: 84; }
+
+/* ======================= Navigation par période ======================= */
+.period-nav { -fx-alignment: center-left; }
+.period-label { -fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: -fms-text; }
+.period-year { -fx-pref-width: 70px; }
+.period-all:selected { -fx-background-color: -fms-accent-soft; -fx-text-fill: -fms-accent; -fx-border-color: -fms-accent; }
+
+/* ======================= Calendrier des versements ======================= */
+.calendar-panel { -fx-padding: 12; }
+.calendar-scroll, .calendar-scroll > .viewport { -fx-background-color: transparent; -fx-background: transparent; }
+.calendar-head { -fx-text-fill: -fms-muted; -fx-font-size: 11px; -fx-text-alignment: center; -fx-padding: 2 0 4 0; }
+.calendar-head-name { -fx-alignment: center-left; -fx-font-weight: bold; }
+.calendar-head-total { -fx-font-weight: bold; -fx-alignment: center-right; }
+.calendar-head.rest { -fx-text-fill: -fms-subtle; }
+.calendar-head.today { -fx-text-fill: -fms-accent; -fx-font-weight: bold; }
+.calendar-name { -fx-font-size: 12.5px; -fx-text-fill: -fms-text; -fx-padding: 0 8 0 2; }
+.calendar-total { -fx-font-size: 12px; -fx-text-fill: -fms-text-2; -fx-padding: 0 4 0 0; }
+.calendar-total.below { -fx-text-fill: -fms-danger; -fx-font-weight: bold; }
+.calendar-total.ok { -fx-text-fill: -fms-success; -fx-font-weight: bold; }
+.calendar-cell {
+    -fx-min-height: 26px; -fx-pref-height: 26px;
+    -fx-background-radius: 4; -fx-border-radius: 4;
+    -fx-font-size: 11px; -fx-font-weight: bold;
+}
+.cal-full, .calendar-swatch.cal-full { -fx-background-color: -fms-cal-full; -fx-text-fill: -fms-cal-on-strong; }
+.cal-bonus, .calendar-swatch.cal-bonus { -fx-background-color: -fms-cal-full; -fx-text-fill: -fms-cal-on-strong; -fx-border-color: -fms-accent; -fx-border-width: 2; }
+.cal-partial, .calendar-swatch.cal-partial { -fx-background-color: -fms-cal-partial; -fx-text-fill: -fms-cal-on-partial; }
+.cal-missed, .calendar-swatch.cal-missed { -fx-background-color: -fms-cal-missed; -fx-text-fill: -fms-cal-on-strong; }
+.cal-exempt, .calendar-swatch.cal-exempt { -fx-background-color: -fms-cal-exempt; -fx-text-fill: -fms-cal-on-strong; }
+.cal-rest, .calendar-swatch.cal-rest { -fx-background-color: -fms-cal-rest; }
+.cal-pending, .calendar-swatch.cal-pending { -fx-background-color: -fms-accent-soft; -fx-text-fill: -fms-accent; -fx-border-color: -fms-accent; -fx-border-style: dashed; }
+.cal-none { -fx-background-color: -fms-surface-alt; -fx-border-color: -fms-border; }
+.calendar-swatch { -fx-min-width: 14px; -fx-min-height: 14px; -fx-max-width: 14px; -fx-max-height: 14px; -fx-background-radius: 3; -fx-border-radius: 3; }
+.calendar-legend { -fx-padding: 4 2 2 2; }
+.calendar-legend-item { -fx-text-fill: -fms-muted; -fx-font-size: 11.5px; -fx-graphic-text-gap: 6; }
+
+/* ======================= Tableau de bord ======================= */
+.page-scroll, .page-scroll > .viewport { -fx-background-color: transparent; -fx-background: transparent; }
+.kpi.clickable { -fx-cursor: hand; }
+.kpi.clickable:hover { -fx-background-color: -fms-hover; }
+.fms-chart { -fx-padding: 4 0 0 0; }
+.fms-chart .chart-plot-background { -fx-background-color: transparent; }
+.fms-chart .chart-vertical-grid-lines { -fx-stroke: transparent; }
+.fms-chart .chart-horizontal-grid-lines { -fx-stroke: -fms-border; }
+.fms-chart .chart-alternative-row-fill { -fx-fill: transparent; }
+.fms-chart .axis { -fx-tick-label-fill: -fms-muted; -fx-tick-label-font-size: 11px; }
+.fms-chart .axis-line, .fms-chart .axis-tick-mark, .fms-chart .axis-minor-tick-mark { -fx-stroke: -fms-border-strong; }
+.fms-chart .chart-legend { -fx-background-color: transparent; }
+.fms-chart .chart-legend-item { -fx-text-fill: -fms-text-2; }
+.fms-chart .default-color0.chart-bar { -fx-bar-fill: -fms-chart-1; }
+.fms-chart .default-color1.chart-bar { -fx-bar-fill: -fms-chart-2; }
+.fms-chart .default-color2.chart-bar { -fx-bar-fill: -fms-chart-3; }
+.fms-chart .default-color0.chart-legend-item-symbol { -fx-background-color: -fms-chart-1; }
+.fms-chart .default-color1.chart-legend-item-symbol { -fx-background-color: -fms-chart-2; }
+.fms-chart .default-color2.chart-legend-item-symbol { -fx-background-color: -fms-chart-3; }
+
+/* ======================= Formulaires : compléments ======================= */
+.multi-choice .check-box { -fx-text-fill: -fms-text; }
+.form-preview {
+    -fx-background-color: -fms-accent-soft; -fx-text-fill: -fms-accent;
+    -fx-background-radius: 6; -fx-padding: 10 12 10 12; -fx-font-size: 12.5px;
+}
+.compact-table { -fx-font-size: 12px; }
+
+/* ======================= Connexion ======================= */
+.login-layer { -fx-background-color: -fms-bg; -fx-padding: 24; }
+.login-card {
+    -fx-background-color: -fms-surface;
+    -fx-border-color: -fms-border;
+    -fx-border-radius: 12; -fx-background-radius: 12;
+    -fx-padding: 28 32 22 32;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.12), 24, 0.2, 0, 6);
+}
+.login-title { -fx-font-size: 19px; -fx-font-weight: bold; -fx-text-fill: -fms-text; -fx-text-alignment: center; }
+.login-subtitle { -fx-text-fill: -fms-muted; }
+.login-note { -fx-text-fill: -fms-text-2; -fx-font-size: 12.5px; }
+.login-error { -fx-text-fill: -fms-danger; -fx-font-size: 12.5px; }
+.login-footnote { -fx-text-fill: -fms-subtle; -fx-font-size: 11px; -fx-padding: 6 0 0 0; }
+.login-footnote .fms-icon { -fx-icon-color: -fms-subtle; }
+.recovery-key { -fx-font-family: "Consolas", "monospace"; -fx-font-size: 15px; -fx-font-weight: bold; }
+
+/* ======================= Barre supérieure : alertes et utilisateur ======================= */
+.alerts-button-box { -fx-padding: 0 4 0 0; }
+.alerts-badge {
+    -fx-background-color: -fms-warning; -fx-text-fill: white;
+    -fx-background-radius: 9; -fx-padding: 0 5 0 5; -fx-font-size: 10px; -fx-font-weight: bold;
+    -fx-translate-x: 4; -fx-translate-y: -2;
+}
+.alerts-badge.critical { -fx-background-color: -fms-danger; }
+.user-menu {
+    -fx-background-color: transparent; -fx-border-color: -fms-border; -fx-border-radius: 6; -fx-background-radius: 6;
+    -fx-padding: 2 6 2 6; -fx-text-fill: -fms-text;
+}
+.user-menu:hover { -fx-background-color: -fms-hover; }
+.user-menu .label { -fx-text-fill: -fms-text; }
+
+/* ======================= Alertes ======================= */
+.alert-row {
+    -fx-background-color: -fms-surface-alt; -fx-border-color: -fms-border;
+    -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12 10 12;
+}
+.alert-row.danger { -fx-border-color: -fms-danger; -fx-background-color: -fms-danger-soft; }
+.alert-row.warning { -fx-border-color: -fms-warning-soft; }
+.alert-row-title { -fx-font-weight: bold; -fx-text-fill: -fms-text; }
+.alert-row-detail { -fx-text-fill: -fms-muted; -fx-font-size: 12px; }
+.alert-icon.danger { -fx-icon-color: -fms-danger; }
+.alert-icon.warning { -fx-icon-color: -fms-warning; }
+.alert-dialog .alert-row { -fx-background-color: -fms-surface-alt; }
+.alert-scroll, .alert-scroll > .viewport { -fx-background-color: transparent; -fx-background: transparent; }
+.alerts-list { -fx-padding: 4 0 4 0; }
+
+/* ======================= Rapports ======================= */
+.report-card { -fx-padding: 16 18 16 18; }
+.report-description { -fx-text-fill: -fms-muted; -fx-font-size: 12.5px; }
+.report-file { -fx-padding: 4 0 4 0; -fx-border-color: transparent transparent -fms-border transparent; }
+
+/* Couleurs propres à chaque graphique : attendu / encaissé ; recettes / charges / résultat */
+.collections-chart .default-color0.chart-bar, .collections-chart .default-color0.chart-legend-item-symbol { -fx-bar-fill: -fms-cal-exempt; -fx-background-color: -fms-cal-exempt; }
+.collections-chart .default-color1.chart-bar, .collections-chart .default-color1.chart-legend-item-symbol { -fx-bar-fill: -fms-success; -fx-background-color: -fms-success; }
+.result-chart .default-color0.chart-bar, .result-chart .default-color0.chart-legend-item-symbol { -fx-bar-fill: -fms-success; -fx-background-color: -fms-success; }
+.result-chart .default-color1.chart-bar, .result-chart .default-color1.chart-legend-item-symbol { -fx-bar-fill: -fms-danger; -fx-background-color: -fms-danger; }
+.result-chart .default-color2.chart-bar, .result-chart .default-color2.chart-legend-item-symbol { -fx-bar-fill: -fms-accent; -fx-background-color: -fms-accent; }
+
+/* ======================= Fichiers joints, aperçu, téléchargement ======================= */
+.muted-text { -fx-text-fill: -fms-muted; -fx-font-size: 12px; }
+.files-chosen { -fx-padding: 0; }
+.files-row {
+    -fx-padding: 6 8 6 10;
+    -fx-background-color: -fms-surface-alt;
+    -fx-background-radius: 6;
+    -fx-border-color: -fms-border;
+    -fx-border-radius: 6;
+}
+.files-row .fms-icon { -fx-icon-color: -fms-muted; }
+.files-size { -fx-text-fill: -fms-muted; -fx-font-size: 12px; }
+.files-too-large { -fx-text-fill: -fms-danger; -fx-font-size: 12px; -fx-font-weight: bold; }
+.attachments { -fx-spacing: 6; }
+
+.vehicle-documents { -fx-padding: 0 0 4 0; }
+.vehicle-document {
+    -fx-padding: 8 10 8 12;
+    -fx-background-color: -fms-surface-alt;
+    -fx-background-radius: 6;
+    -fx-border-color: -fms-border;
+    -fx-border-radius: 6;
+}
+.vehicle-document-type { -fx-font-weight: bold; -fx-text-fill: -fms-text; }
+
+.toast-action {
+    -fx-background-color: transparent;
+    -fx-border-color: -fms-border-strong;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-text-fill: -fms-primary;
+    -fx-font-weight: bold;
+    -fx-padding: 4 10 4 10;
+    -fx-cursor: hand;
+}
+.toast-action:hover { -fx-background-color: -fms-hover; }
+
+.preview-dialog {
+    -fx-background-color: -fms-surface;
+    -fx-background-radius: 10;
+    -fx-border-color: -fms-border;
+    -fx-border-radius: 10;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.30), 28, 0, 0, 6);
+}
+.preview-dialog .drawer-header { -fx-background-color: transparent; }
+.preview-dialog .drawer-footer { -fx-background-radius: 0 0 10 10; }
+.preview-toolbar {
+    -fx-padding: 6 16 6 16;
+    -fx-background-color: -fms-surface;
+    -fx-border-color: transparent transparent -fms-border transparent;
+}
+.preview-zoom { -fx-text-fill: -fms-text-2; -fx-font-size: 12px; }
+.preview-status { -fx-text-fill: -fms-muted; -fx-font-size: 12px; }
+.preview-scroll, .preview-scroll > .viewport { -fx-background-color: -fms-bg; -fx-background: -fms-bg; }
+.preview-scroll { -fx-border-color: transparent; }
+.preview-pages { -fx-padding: 24; }
+.preview-page {
+    -fx-background-color: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.18), 10, 0, 0, 2);
+}

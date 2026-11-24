@@ -63,8 +63,6 @@ public final class VehicleCategoriesScreen extends CrudScreen<VehicleCategory> {
         table.badgeColumn(messages.get("common.state"), c -> c.active()
                 ? new Badge(messages.get("common.active"), Tone.SUCCESS)
                 : new Badge(messages.get("common.inactive"), Tone.NEUTRAL), 110);
-        table.textColumn(messages.get("category.origin"), c -> messages.get(c.system()
-                ? "category.origin.system" : "category.origin.user"), 130);
         table.searchBy(VehicleCategory::name);
     }
 

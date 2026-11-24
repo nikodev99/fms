@@ -5,6 +5,7 @@ import jakarta.inject.Singleton;
 import org.gu.fms.desktop.platform.audit.AuditLog;
 import org.gu.fms.desktop.platform.db.TransactionManager;
 import org.gu.fms.desktop.platform.services.AuditedCrudService;
+import org.gu.fms.desktop.platform.services.DeletableService;
 import org.gu.fms.desktop.platform.settings.AppSettings;
 import org.gu.fms.domain.common.FieldError;
 import org.gu.fms.domain.vehicle.VehicleCategory;
@@ -14,14 +15,15 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 
-/** Catégories de véhicules (Paramètres › Flotte). Jamais supprimées : désactivées. */
+/** Catégories de véhicules (Paramètres › Flotte). Supprimables tant qu'aucun véhicule ne les utilise ; sinon désactivées. */
 @Singleton
-public final class VehicleCategoryService extends AuditedCrudService<VehicleCategory> {
+public final class VehicleCategoryService extends AuditedCrudService<VehicleCategory> implements DeletableService<VehicleCategory> {
 
     private final VehicleCategoryRepository categories;
 
     @Inject
-    public VehicleCategoryService(VehicleCategoryRepository repository, TransactionManager tx, AuditLog audit, Clock clock, AppSettings settings) {
+    public VehicleCategoryService(VehicleCategoryRepository repository, TransactionManager tx, AuditLog audit,
+                                  Clock clock, AppSettings settings) {
         super(repository, tx, audit, clock, settings);
         this.categories = repository;
     }
@@ -51,6 +53,11 @@ public final class VehicleCategoryService extends AuditedCrudService<VehicleCate
     @Override
     protected FieldError uniqueViolation(VehicleCategory c) {
         return FieldError.of("name", "category.name.taken", c.name());
+    }
+
+    @Override
+    protected boolean isSystem(VehicleCategory e) {
+        return e.system();
     }
 
     @Override

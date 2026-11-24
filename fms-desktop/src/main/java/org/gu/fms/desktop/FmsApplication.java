@@ -12,19 +12,19 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import org.gu.fms.desktop.app.AppModule;
 import org.gu.fms.desktop.app.AppPaths;
-import org.gu.fms.desktop.app.AppRoutes;
+import org.gu.fms.desktop.app.SessionFlow;
 import org.gu.fms.desktop.app.shell.ShellController;
 import org.gu.fms.desktop.platform.backup.BackupService;
+import org.gu.fms.desktop.platform.brand.BrandAssets;
 import org.gu.fms.desktop.platform.db.Database;
 import org.gu.fms.desktop.platform.db.migration.MigrationEngine;
-import org.gu.fms.desktop.platform.ui.nav.Navigator;
 import org.gu.fms.desktop.platform.ui.overlay.OverlayHost;
 import org.gu.fms.desktop.platform.ui.task.UiTasks;
 import org.gu.fms.desktop.platform.ui.theme.ThemeManager;
 import org.gu.fms.desktop.platform.ui.view.View;
 import org.gu.fms.desktop.platform.ui.view.ViewLoader;
 
-import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.util.Objects;
 
 /**
@@ -36,10 +36,8 @@ public class FmsApplication extends Application {
 
     public static final String STYLESHEET = "/org/gu/fms/desktop/platform/ui/theme/fms.css";
     public static final String SHELL = "/org/gu/fms/desktop/app/shell/shell.fxml";
-    private static final String ICON_PATTERN = "/org/gu/fms/desktop/images/fms-logo-%d.png";
-    private static final int[] ICON_SIZES = {16, 24, 32, 48, 64, 128, 256};
     private static final double MIN_WIDTH = 1024;
-    private static final double MIN_HEIGHT = 640;
+    private static final double MIN_HEIGHT = 600;
 
     private Injector injector;
     private Throwable startupError;
@@ -78,22 +76,20 @@ public class FmsApplication extends Application {
 
         injector.getInstance(ThemeManager.class).attach(root);      // avant show() : pas de flash de thème
         injector.getInstance(OverlayHost.class).attach(root);
-        injector.getInstance(Navigator.class).navigate(AppRoutes.DASHBOARD);
 
-        for (int size : ICON_SIZES) {
-            try (InputStream icon = FmsApplication.class.getResourceAsStream(String.format(ICON_PATTERN, size))) {
-                if (icon != null) {
-                    stage.getIcons().add(new Image(icon));
-                }
-            } catch (java.io.IOException e) {
-                // icône facultative : la fenêtre s'ouvre avec l'icône Java par défaut
-            }
+        // Icônes de fenêtre : une par taille livrée ; à défaut, la grande image unique (le système la réduit)
+        for (int size : BrandAssets.SIZES) {
+            BrandAssets.exact(size).ifPresent(b -> stage.getIcons().add(new Image(new ByteArrayInputStream(b))));
+        }
+        if (stage.getIcons().isEmpty()) {
+            BrandAssets.logo(256).ifPresent(b -> stage.getIcons().add(new Image(new ByteArrayInputStream(b))));
         }
         stage.setTitle("FMS — Gestion de flotte");
         stage.setMinWidth(MIN_WIDTH);
         stage.setMinHeight(MIN_HEIGHT);
         stage.setScene(scene);
         stage.show();
+        injector.getInstance(SessionFlow.class).start();      // connexion avant tout accès aux données
     }
 
     @Override

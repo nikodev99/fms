@@ -109,4 +109,16 @@ public final class CollectionRepository extends JdbcRepository<CollectionEntry> 
         return jdbc.query("SELECT DISTINCT driver_id FROM collection_entry WHERE entry_date BETWEEN ? AND ?",
                 row -> row.longValue("driver_id"), from, to);
     }
+
+    /** Par chauffeur et par jour : reçu net (versements − avoirs) et nombre de versements, sur une période. */
+    public List<DayTotal> dailyTotals(LocalDate from, LocalDate to) {
+        return jdbc.query("SELECT driver_id, entry_date, SUM(CASE kind WHEN 'CREDIT_NOTE' THEN -amount ELSE amount END)"
+                        + " AS total, SUM(CASE kind WHEN 'COLLECTION' THEN 1 ELSE 0 END) AS entries"
+                        + " FROM collection_entry WHERE entry_date BETWEEN ? AND ? GROUP BY driver_id, entry_date",
+                row -> new DayTotal(row.longValue("driver_id"), row.localDate("entry_date"), row.longValue("total"),
+                        row.intValue("entries")), from, to);
+    }
+
+    public record DayTotal(long driverId, LocalDate date, long received, int entries) {
+    }
 }

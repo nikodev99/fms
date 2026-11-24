@@ -21,14 +21,19 @@ import java.util.*;
  *  2. un script déjà appliqué ne peut plus être modifié (empreinte SHA-256 vérifiée à chaque démarrage) ;
  *  3. avant toute mise à jour d'une base existante, une copie complète est faite dans le dossier des sauvegardes ;
  *  4. une base créée par une version plus récente de l'application est refusée (pas de retour en arrière silencieux).
- * <p>
+ * </p>
  * Règle d'équipe : on n'édite jamais un script livré ; on en ajoute un nouveau (V00N+1).
  */
 public final class MigrationEngine {
+
     public static final String DEFAULT_LOCATION = "db/migration";
 
+    /** Directive d'un script qui reconstruit une table référencée par d'autres (voir {@link #setForeignKeys}). */
+    static final String FOREIGN_KEYS_OFF = "-- fms:foreign-keys-off";
+
     private static final System.Logger LOG = System.getLogger(MigrationEngine.class.getName());
-    private static final DateTimeFormatter BACKUP_STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").withZone(ZoneOffset.UTC);
+    private static final DateTimeFormatter BACKUP_STAMP =
+            DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").withZone(ZoneOffset.UTC);
 
     private final Database database;
     private final TransactionManager tx;
@@ -38,7 +43,8 @@ public final class MigrationEngine {
     private final String location;
     private final ClassLoader loader;
 
-    public MigrationEngine(Database database, TransactionManager tx, Jdbc jdbc, Clock clock, Path backupDirectory, String location, ClassLoader loader) {
+    public MigrationEngine(Database database, TransactionManager tx, Jdbc jdbc, Clock clock,
+                           Path backupDirectory, String location, ClassLoader loader) {
         this.database = database;
         this.tx = tx;
         this.jdbc = jdbc;
@@ -146,11 +152,18 @@ public final class MigrationEngine {
     private void apply(Migration m) {
         long start = System.nanoTime();
         List<String> statements = SqlScriptSplitter.split(m.sql());
+        boolean rebuild = m.sql().contains(FOREIGN_KEYS_OFF);
         try {
+            if (rebuild) {
+                setForeignKeys(false);
+            }
             tx.runInTransaction(c -> {
                 try (Statement st = c.createStatement()) {
                     for (String sql : statements) {
                         st.execute(sql);
+                    }
+                    if (rebuild) {
+                        verifyForeignKeys(st, m);
                     }
                 }
                 long ms = (System.nanoTime() - start) / 1_000_000;
@@ -160,7 +173,40 @@ public final class MigrationEngine {
             });
         } catch (RuntimeException e) {
             throw new MigrationException("Échec de la migration " + m.resource() + " : " + e.getMessage(), e);
+        } finally {
+            if (rebuild) {
+                setForeignKeys(true);
+            }
         }
         LOG.log(System.Logger.Level.INFO, "Migration appliquée : {0}", m.resource());
+    }
+
+    /**
+     * Reconstruction de table (procédure SQLite « 12 étapes ») : les clés étrangères sont suspendues le temps du
+     * script — PRAGMA sans effet dans une transaction, donc posé avant —, puis toutes revérifiées avant validation.
+     */
+    private void setForeignKeys(boolean on) {
+        tx.withConnection(c -> {
+            try (Statement st = c.createStatement()) {
+                st.execute("PRAGMA foreign_keys = " + (on ? "ON" : "OFF"));
+            }
+            return null;
+        });
+    }
+
+    private static void verifyForeignKeys(Statement st, Migration m) throws java.sql.SQLException {
+        try (java.sql.ResultSet rs = st.executeQuery("PRAGMA foreign_key_check")) {
+            if (rs.next()) {
+                throw new MigrationException("Migration " + m.resource() + " : référence rompue dans la table "
+                        + rs.getString(1) + " (ligne " + rs.getLong(2) + ")");
+            }
+        }
+    }
+
+    private record AppliedMigration(int version, String script, String checksum) {
+    }
+
+    /** Résultat d'une exécution. {@code backup} est nul si aucune sauvegarde n'était nécessaire. */
+    public record MigrationReport(int fromVersion, int toVersion, List<Migration> applied, Path backup) {
     }
 }

@@ -25,7 +25,7 @@
 
         <!-- Interface -->
         <javafx.version>21.0.9</javafx.version>              <!-- LTS ; dernière ligne compatible JDK 17 -->
-        <atlantafx.version>2.1.0</atlantafx.version>
+        <atlantafx.version>2.0.1</atlantafx.version>
         <ikonli.version>12.4.0</ikonli.version>
         <validatorfx.version>1.0.0</validatorfx.version>
         <openpdf.version>2.0.5</openpdf.version>            <!-- 2.1+ et 3.x exigent Java 21 -->

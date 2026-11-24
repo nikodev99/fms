@@ -75,6 +75,10 @@ public final class DailyPointRepository extends JdbcRepository<DailyPoint> {
         return jdbc.query("SELECT * FROM daily_point WHERE point_date = ?", mapper(), day);
     }
 
+    public List<DailyPoint> findBetween(LocalDate from, LocalDate to) {
+        return jdbc.query("SELECT * FROM daily_point WHERE point_date BETWEEN ? AND ?", mapper(), from, to);
+    }
+
     public boolean isPointed(long driverId, LocalDate day) {
         return jdbc.exists("SELECT 1 FROM daily_point WHERE driver_id = ? AND point_date = ?", driverId, day);
     }
