@@ -12,6 +12,7 @@ import org.gu.fms.desktop.platform.audit.AuditLog;
 import org.gu.fms.desktop.platform.db.StaleDataException;
 import org.gu.fms.desktop.platform.db.TransactionManager;
 import org.gu.fms.desktop.platform.services.CrudService;
+import org.gu.fms.desktop.platform.session.UserSession;
 import org.gu.fms.desktop.platform.settings.AppSettings;
 import org.gu.fms.domain.collection.LedgerRubric;
 import org.gu.fms.domain.collection.LedgerSource;
@@ -51,6 +52,7 @@ public final class PayrollService implements CrudService<Payslip> {
     static final String AUDIT_TYPE = "payslip";
 
     private final PayslipRepository payslips;
+    private final UserSession session;
     private final DriverRepository drivers;
     private final CollectionRepository collections;
     private final PayrollContributionRepository contributions;
@@ -70,7 +72,8 @@ public final class PayrollService implements CrudService<Payslip> {
                           PayrollContributionRepository contributions, ItsBandRepository itsBands,
                           ItsSettingsService its, RecoveryPolicyService policy, DriverLedgerService driverLedger,
                           CategoryRepository categories, Ledger ledger, TransactionManager tx, AuditLog audit,
-                          Clock clock, AppSettings settings) {
+                          Clock clock, AppSettings settings, UserSession session) {
+        this.session = session;
         this.payslips = payslips;
         this.drivers = drivers;
         this.collections = collections;
@@ -202,6 +205,7 @@ public final class PayrollService implements CrudService<Payslip> {
      * est conservé et la validation refusée pour qu'il soit revu.
      */
     public Payslip validate(long id) {
+        session.requireOwner();
         Payslip before = draftOrFail(id);
         Payslip fresh = recompute(id);
         if (!sameAmounts(before, fresh)) {
@@ -229,6 +233,7 @@ public final class PayrollService implements CrudService<Payslip> {
 
     /** Enregistre le paiement (fait hors application) : sortie de trésorerie liée au bulletin. */
     public Payslip pay(long id, Long accountId, LocalDate date, String reference) {
+        session.requireOwner();
         return tx.inTransaction(c -> {
             Payslip p = payslips.findById(id)
                     .orElseThrow(() -> ValidationException.of(FieldError.of(null, "payroll.unknown")));
@@ -259,6 +264,7 @@ public final class PayrollService implements CrudService<Payslip> {
 
     /** Paiement contre-passé (depuis l'écran Transactions ou le bulletin) : retour à l'état validé. */
     public FinancialTransaction reversePayment(long id, String reason) {
+        session.requireOwner();
         return tx.inTransaction(c -> {
             Payslip p = payslips.findById(id)
                     .orElseThrow(() -> ValidationException.of(FieldError.of(null, "payroll.unknown")));
@@ -275,6 +281,7 @@ public final class PayrollService implements CrudService<Payslip> {
 
     /** Annule un brouillon ou un bulletin validé non payé ; les retenues validées sont rendues au compte chauffeur. */
     public Payslip cancel(long id, String reason) {
+        session.requireOwner();
         String text = TextRules.normalize(reason);
         if (text == null) {
             throw ValidationException.of(FieldError.of("reason", "payroll.cancelReasonRequired"));

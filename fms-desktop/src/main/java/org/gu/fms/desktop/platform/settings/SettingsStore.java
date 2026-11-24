@@ -92,6 +92,20 @@ public final class SettingsStore {
         });
     }
 
+    /**
+     * Écrit des valeurs SANS en tracer le contenu (empreintes de la clé de récupération) : seul le fait est tracé par
+     * l'appelant.
+     */
+    public void putAllSilently(Map<String, String> values) {
+        tx.runInTransaction(c -> {
+            for (Map.Entry<String, String> e : values.entrySet()) {
+                jdbc.update("INSERT INTO app_setting (key, value, updated_at) VALUES (?, ?, ?)"
+                                + " ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
+                        e.getKey(), e.getValue(), clock.instant());
+            }
+        });
+    }
+
     /** Conversions vers le texte stocké. */
     public static String text(Money value) {
         return value == null ? null : Long.toString(value.minor());

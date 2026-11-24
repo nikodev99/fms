@@ -5,6 +5,7 @@ import jakarta.inject.Singleton;
 import org.gu.fms.desktop.platform.audit.AuditLog;
 import org.gu.fms.desktop.platform.db.TransactionManager;
 import org.gu.fms.desktop.platform.services.AuditedCrudService;
+import org.gu.fms.desktop.platform.services.DeletableService;
 import org.gu.fms.desktop.platform.settings.AppSettings;
 import org.gu.fms.domain.common.FieldError;
 import org.gu.fms.domain.maintenance.MaintenanceType;
@@ -19,7 +20,7 @@ import java.util.List;
  * pas les interventions passées : chacune garde la nature enregistrée le jour de sa saisie.
  */
 @Singleton
-public final class MaintenanceTypeService extends AuditedCrudService<MaintenanceType> {
+public final class MaintenanceTypeService extends AuditedCrudService<MaintenanceType> implements DeletableService<MaintenanceType> {
 
     private final MaintenanceTypeRepository types;
 

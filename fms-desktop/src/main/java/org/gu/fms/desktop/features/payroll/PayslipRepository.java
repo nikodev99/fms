@@ -104,6 +104,12 @@ public final class PayslipRepository extends JdbcRepository<Payslip> {
         return jdbc.query("SELECT * FROM payslip WHERE period = ? ORDER BY id", mapper(), period.toString());
     }
 
+    /** Bulletins des mois [from, to] (sans leurs lignes). */
+    public List<Payslip> findBetween(YearMonth from, YearMonth to) {
+        return jdbc.query("SELECT * FROM payslip WHERE period BETWEEN ? AND ? ORDER BY period, id", mapper(),
+                from.toString(), to.toString());
+    }
+
     public Optional<Payslip> findActive(YearMonth period, long driverId) {
         return jdbc.queryOne("SELECT * FROM payslip WHERE period = ? AND driver_id = ? AND status <> 'CANCELLED'",
                 mapper(), period.toString(), driverId);

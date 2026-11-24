@@ -20,8 +20,8 @@ import org.gu.fms.desktop.platform.ui.icon.FmsIcon;
 import org.gu.fms.desktop.platform.ui.section.FormSection;
 import org.gu.fms.domain.company.CompanyProfile;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 /** Paramètres › Général › Entreprise : identité reprise sur les documents. */
@@ -31,6 +31,7 @@ public final class CompanySection extends FormSection<CompanyProfile> {
     private CompanyProfile loaded = CompanyProfile.EMPTY;
     private Path pendingLogo;
     private boolean logoRemoved;
+    private volatile byte[] loadedLogo;
     private TextInput name;
     private TextInput legalForm;
     private TextInput rccm;
@@ -92,7 +93,7 @@ public final class CompanySection extends FormSection<CompanyProfile> {
         remove.setOnAction(e -> {
             pendingLogo = null;
             logoRemoved = true;
-            showLogo(null);
+            showLogo(null, null);
         });
         Label help = new Label(messages.get("company.logo.help"));
         help.getStyleClass().add("field-message");
@@ -113,15 +114,17 @@ public final class CompanySection extends FormSection<CompanyProfile> {
         if (file != null) {
             pendingLogo = file.toPath();
             logoRemoved = false;
-            showLogo(pendingLogo);
+            showLogo(new Image(pendingLogo.toUri().toString(), 72, 72, true, true, true),
+                    pendingLogo.getFileName().toString());
         }
     }
 
-    private void showLogo(Path path) {
-        if (path != null && Files.isRegularFile(path)) {
-            preview.setImage(new Image(path.toUri().toString(), 72, 72, true, true, true));
+    /** @param image logo à afficher, ou null (aucun logo : celui de FMS figurera sur les rapports) */
+    private void showLogo(Image image, String label) {
+        if (image != null && !image.isError()) {
+            preview.setImage(image);
             previewBox.getChildren().setAll(preview);
-            logoName.setText(path.getFileName().toString());
+            logoName.setText(label);
         } else {
             preview.setImage(null);
             previewBox.getChildren().setAll(new FmsIcon(AppIcon.IMAGE, 28));
@@ -136,7 +139,9 @@ public final class CompanySection extends FormSection<CompanyProfile> {
 
     @Override
     protected CompanyProfile load() {
-        return service.load();
+        CompanyProfile p = service.load();
+        loadedLogo = service.logo(p).orElse(null);
+        return p;
     }
 
     @Override
@@ -152,7 +157,9 @@ public final class CompanySection extends FormSection<CompanyProfile> {
         city.setValue(p.city());
         phone.setValue(p.phone());
         email.setValue(p.email());
-        showLogo(service.logoPath(p));
+        byte[] logo = loadedLogo;
+        showLogo(logo == null ? null : new Image(new ByteArrayInputStream(logo), 72, 72, true, true),
+                messages.get("company.logo.saved"));
     }
 
     @Override
@@ -165,6 +172,7 @@ public final class CompanySection extends FormSection<CompanyProfile> {
     @Override
     protected void save(CompanyProfile p) {
         loaded = service.save(p, pendingLogo);
+        loadedLogo = service.logo(loaded).orElse(null);
     }
 
     @Override

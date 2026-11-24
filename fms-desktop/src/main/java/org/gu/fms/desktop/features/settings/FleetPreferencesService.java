@@ -20,6 +20,7 @@ public final class FleetPreferencesService {
     static final String DOC_DAYS = "fleet.documentAlertDays";
     static final String MAINT_DAYS = "fleet.maintenanceAlertDays";
     static final String MAINT_KM = "fleet.maintenanceAlertKm";
+    static final String LOAN_DAYS = "loan.alertDays";
 
     private final SettingsStore store;
     private final AppSettings settings;
@@ -30,14 +31,15 @@ public final class FleetPreferencesService {
         this.settings = settings;
     }
 
-    /** Valeurs livrées par la migration V004 ; repli identique si une clé a disparu. */
+    /** Valeurs livrées par les migrations V004 et V008 ; repli identique si une clé a disparu. */
     public FleetPreferences load() {
         return new FleetPreferences(
                 store.money(REPAIR_THRESHOLD, settings.currency()),
                 store.percent(WARNING, Percent.of("80")),
                 store.longValue(DOC_DAYS, 30),
                 store.longValue(MAINT_DAYS, 15),
-                store.longValue(MAINT_KM, 500));
+                store.longValue(MAINT_KM, 500),
+                store.longValue(LOAN_DAYS, 7));
     }
 
     public FleetPreferences save(FleetPreferences prefs) {
@@ -48,6 +50,7 @@ public final class FleetPreferencesService {
         values.put(DOC_DAYS, Long.toString(prefs.documentAlertDays()));
         values.put(MAINT_DAYS, Long.toString(prefs.maintenanceAlertDays()));
         values.put(MAINT_KM, Long.toString(prefs.maintenanceAlertKm()));
+        values.put(LOAN_DAYS, Long.toString(prefs.loanAlertDays()));
         store.putAll(values, null);
         return prefs;
     }

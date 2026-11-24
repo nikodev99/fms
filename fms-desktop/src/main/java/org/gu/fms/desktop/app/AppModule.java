@@ -4,6 +4,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.multibindings.Multibinder;
 import jakarta.inject.Singleton;
+import org.gu.fms.desktop.features.loan.LoanReversalHandler;
 import org.gu.fms.desktop.features.payroll.AdvanceService;
 import org.gu.fms.desktop.features.payroll.PayrollReversalHandler;
 import org.gu.fms.desktop.features.finance.ReversalHandler;
@@ -43,6 +44,7 @@ public final class AppModule extends AbstractModule {
         Multibinder<ReversalHandler> reversals = Multibinder.newSetBinder(binder(), ReversalHandler.class);
         reversals.addBinding().to(TransferReversalHandler.class);
         reversals.addBinding().to(PayrollReversalHandler.class);
+        reversals.addBinding().to(LoanReversalHandler.class);
         reversals.addBinding().to(AdvanceService.class);
     }
 

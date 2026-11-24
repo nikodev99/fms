@@ -15,11 +15,12 @@ import org.gu.fms.desktop.platform.ui.section.SectionedScreen;
 
 import java.util.List;
 
-/** Paramètres : général, flotte, paie et provisions, données. */
+/** Paramètres : général, flotte, versements et finances, paie et provisions, données. */
 public final class SettingsScreen extends SectionedScreen {
 
     private static final String GENERAL = "settings.group.general";
     private static final String FLEET = "settings.group.fleet";
+    private static final String FINANCE = "settings.group.finance";
     private static final String PAYROLL = "settings.group.payroll";
     private static final String DATA = "settings.group.data";
 
@@ -43,10 +44,13 @@ public final class SettingsScreen extends SectionedScreen {
         return List.of(
                 new Section(GENERAL, "settings.company", AppIcon.COMPANY, CompanySection.class),
                 new Section(GENERAL, "settings.regional", AppIcon.REGIONAL, RegionalSection.class),
+                //new Section(GENERAL, "settings.users", AppIcon.USERS, UsersScreen.class),
                 new Section(FLEET, "settings.categories", AppIcon.CATEGORY, VehicleCategoriesScreen.class),
                 new Section(FLEET, "settings.documentTypes", AppIcon.DOCUMENT, DocumentTypesScreen.class),
                 new Section(FLEET, "settings.maintenanceTypes", AppIcon.MAINTENANCE, MaintenanceTypesScreen.class),
                 new Section(FLEET, "settings.fleetDefaults", AppIcon.DEFAULTS, FleetDefaultsSection.class),
+                //new Section(FINANCE, "settings.collectionPolicy", AppIcon.KPI, CollectionPolicySection.class),
+                //new Section(FINANCE, "settings.txCategories", AppIcon.TRANSACTIONS, CategoriesScreen.class),
                 new Section(PAYROLL, "settings.contributions", AppIcon.CONTRIBUTIONS, ContributionsScreen.class),
                 new Section(PAYROLL, "settings.its", AppIcon.TAX, ItsSection.class),
                 new Section(PAYROLL, "settings.recoveries", AppIcon.ADVANCE, RecoverySection.class),

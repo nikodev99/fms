@@ -15,6 +15,7 @@ public final class FleetDefaultsSection extends FormSection<FleetPreferences> {
     private NumberInput docDays;
     private NumberInput maintDays;
     private NumberInput maintKm;
+    private NumberInput loanDays;
 
     @Inject
     public FleetDefaultsSection(CrudContext ui, FleetPreferencesService service) {
@@ -49,6 +50,8 @@ public final class FleetDefaultsSection extends FormSection<FleetPreferences> {
         maintKm = form.number("maintenanceAlertKm", messages.get("fleetDefaults.maintKm")).required()
                 .unit(messages.get("unit.km")).rule(Rules.range(0, FleetPreferences.KM_MAX))
                 .help(messages.get("fleetDefaults.maint.help"));
+        loanDays = form.number("loanAlertDays", messages.get("fleetDefaults.loanDays")).required()
+                .unit(messages.get("unit.days")).rule(Rules.range(0, FleetPreferences.DAYS_MAX));
         return form;
     }
 
@@ -64,12 +67,13 @@ public final class FleetDefaultsSection extends FormSection<FleetPreferences> {
         docDays.setValue(p.documentAlertDays());
         maintDays.setValue(p.maintenanceAlertDays());
         maintKm.setValue(p.maintenanceAlertKm());
+        loanDays.setValue(p.loanAlertDays());
     }
 
     @Override
     protected FleetPreferences collect() {
         return new FleetPreferences(threshold.getValue(), warning.getValue(), docDays.getValue(), maintDays.getValue(),
-                maintKm.getValue());
+                maintKm.getValue(), loanDays.getValue());
     }
 
     @Override
