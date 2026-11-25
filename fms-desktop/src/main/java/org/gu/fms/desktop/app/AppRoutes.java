@@ -9,8 +9,10 @@ import org.gu.fms.desktop.features.driver.DriversModuleScreen;
 import org.gu.fms.desktop.features.finance.AccountsModuleScreen;
 import org.gu.fms.desktop.features.finance.TransactionsModuleScreen;
 import org.gu.fms.desktop.features.finance.TransactionsScreen;
+import org.gu.fms.desktop.features.loan.LoansScreen;
 import org.gu.fms.desktop.features.maintenance.MaintenanceModuleScreen;
 import org.gu.fms.desktop.features.payroll.PayrollModuleScreen;
+import org.gu.fms.desktop.features.report.ReportsScreen;
 import org.gu.fms.desktop.features.settings.SettingsScreen;
 import org.gu.fms.desktop.features.vehicle.VehicleScreen;
 import org.gu.fms.desktop.platform.ui.icon.AppIcon;
@@ -61,9 +63,9 @@ public final class AppRoutes {
 
                 new Route(ACCOUNTS, "nav.accounts", AppIcon.ACCOUNTS, FINANCE, AccountsModuleScreen.class),
                 new Route(PAYROLL, "nav.payroll", AppIcon.PAYROLL, FINANCE, PayrollModuleScreen.class),
-                new Route(LOANS, "nav.loans", AppIcon.LOAN, FINANCE, ComingSoonScreen.class),
+                new Route(LOANS, "nav.loans", AppIcon.LOAN, FINANCE, LoansScreen.class),
 
-                new Route(REPORTS, "nav.reports", AppIcon.REPORTS, ANALYSIS, ComingSoonScreen.class),
+                new Route(REPORTS, "nav.reports", AppIcon.REPORTS, ANALYSIS, ReportsScreen.class),
 
                 new Route(SETTINGS, "nav.settings", AppIcon.SETTINGS, Route.FOOTER, SettingsScreen.class)));
     }

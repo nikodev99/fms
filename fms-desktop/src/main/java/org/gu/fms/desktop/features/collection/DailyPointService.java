@@ -26,8 +26,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Point journalier (instructions §4.3), identique à l'édition Excel : pour chaque chauffeur concerné ce jour-là
- * (affectation active ou versement reçu), attendu et reçu sont figés et l'écart est porté à son compte.
+ * Point journalier (instructions §4.3) : pour chaque chauffeur concerné ce jour-là (affectation active ou versement
+ * reçu), attendu et reçu sont figés et l'écart est porté à son compte. Un jour de repos de la flotte, rien n'est
+ * attendu.
  * La validation ne traite que les chauffeurs pas encore pointés : un chauffeur qui verse après coup peut être
  * pointé ensuite sans toucher aux autres.
  */
@@ -48,12 +49,13 @@ public final class DailyPointService {
     private final Clock clock;
     private final AppSettings settings;
     private final Formats formats;
+    private final CollectionPolicyService policy;
 
     @Inject
     public DailyPointService(DailyPointRepository points, CollectionRepository collections,
                              AssignmentRepository assignments, DriverRepository drivers, VehicleRepository vehicles,
                              DriverLedgerService driverLedger, Ledger ledger, TransactionManager tx, AuditLog audit,
-                             Clock clock, AppSettings settings, Formats formats) {
+                             Clock clock, AppSettings settings, Formats formats, CollectionPolicyService policy) {
         this.points = points;
         this.collections = collections;
         this.assignments = assignments;
@@ -66,6 +68,7 @@ public final class DailyPointService {
         this.clock = clock;
         this.settings = settings;
         this.formats = formats;
+        this.policy = policy;
     }
 
     /** Lignes du point de la journée : chauffeurs pointés et chauffeurs à pointer. */
@@ -78,6 +81,10 @@ public final class DailyPointService {
             if (a.role() == AssignmentRole.PRIMARY || !vehicleOf.containsKey(a.driverId())) {
                 vehicleOf.put(a.driverId(), a.vehicleId());
             }
+        }
+        if (policy.load().isRestDay(day)) {
+            // Jour de repos de la flotte : rien n'est attendu ; un versement reçu reste pointé (il compense les manquants).
+            expected.replaceAll((driver, amount) -> 0L);
         }
         Map<Long, Long> received = collections.receivedByDriver(day);
         collections.firstVehicleByDriver(day).forEach(vehicleOf::putIfAbsent);

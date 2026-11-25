@@ -8,7 +8,7 @@ import org.gu.fms.desktop.platform.ui.section.SectionedScreen;
 
 import java.util.List;
 
-/** Module Versements : versements reçus | comptes chauffeurs (manquants, avances, dettes). */
+/** Module Versements : versements reçus | calendrier et recouvrement | comptes chauffeurs (manquants, avances, dettes). */
 public final class CollectionsModuleScreen extends SectionedScreen {
 
     @Inject
@@ -30,6 +30,7 @@ public final class CollectionsModuleScreen extends SectionedScreen {
     protected List<Section> sections() {
         return List.of(
                 new Section(null, "collections.tab.list", AppIcon.COLLECTIONS, CollectionsScreen.class),
+                new Section(null, "collections.tab.calendar", AppIcon.CALENDAR, CollectionCalendarScreen.class),
                 new Section(null, "collections.tab.accounts", AppIcon.LEDGER, DriverAccountsScreen.class));
     }
 }

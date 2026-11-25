@@ -4,10 +4,12 @@ import com.google.inject.Injector;
 import jakarta.inject.Inject;
 import org.gu.fms.desktop.features.allocation.AllocationRulesScreen;
 import org.gu.fms.desktop.features.document.DocumentTypesScreen;
+import org.gu.fms.desktop.features.finance.CategoriesScreen;
 import org.gu.fms.desktop.features.maintenance.MaintenanceTypesScreen;
 import org.gu.fms.desktop.features.payroll.ContributionsScreen;
 import org.gu.fms.desktop.features.payroll.ItsSection;
 import org.gu.fms.desktop.features.payroll.RecoverySection;
+import org.gu.fms.desktop.features.security.UsersScreen;
 import org.gu.fms.desktop.features.vehicle.VehicleCategoriesScreen;
 import org.gu.fms.desktop.platform.i18n.Messages;
 import org.gu.fms.desktop.platform.ui.icon.AppIcon;
@@ -44,13 +46,13 @@ public final class SettingsScreen extends SectionedScreen {
         return List.of(
                 new Section(GENERAL, "settings.company", AppIcon.COMPANY, CompanySection.class),
                 new Section(GENERAL, "settings.regional", AppIcon.REGIONAL, RegionalSection.class),
-                //new Section(GENERAL, "settings.users", AppIcon.USERS, UsersScreen.class),
+                new Section(GENERAL, "settings.users", AppIcon.USERS, UsersScreen.class),
                 new Section(FLEET, "settings.categories", AppIcon.CATEGORY, VehicleCategoriesScreen.class),
                 new Section(FLEET, "settings.documentTypes", AppIcon.DOCUMENT, DocumentTypesScreen.class),
                 new Section(FLEET, "settings.maintenanceTypes", AppIcon.MAINTENANCE, MaintenanceTypesScreen.class),
                 new Section(FLEET, "settings.fleetDefaults", AppIcon.DEFAULTS, FleetDefaultsSection.class),
-                //new Section(FINANCE, "settings.collectionPolicy", AppIcon.KPI, CollectionPolicySection.class),
-                //new Section(FINANCE, "settings.txCategories", AppIcon.TRANSACTIONS, CategoriesScreen.class),
+                new Section(FINANCE, "settings.collectionPolicy", AppIcon.KPI, CollectionPolicySection.class),
+                new Section(FINANCE, "settings.txCategories", AppIcon.TRANSACTIONS, CategoriesScreen.class),
                 new Section(PAYROLL, "settings.contributions", AppIcon.CONTRIBUTIONS, ContributionsScreen.class),
                 new Section(PAYROLL, "settings.its", AppIcon.TAX, ItsSection.class),
                 new Section(PAYROLL, "settings.recoveries", AppIcon.ADVANCE, RecoverySection.class),
