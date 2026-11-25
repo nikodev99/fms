@@ -39,11 +39,11 @@ class BackupServiceTest {
 
     private BackupService service(Clock clock) {
         return new BackupService(f.db.database, new BackupLocation(dir.resolve("backups")), clock, f.settingsStore,
-                () -> f.db.migrator(MigrationEngine.DEFAULT_LOCATION));
+                () -> f.db.migrator(MigrationEngine.DEFAULT_LOCATION), f.session);
     }
 
     @Test
-    void automaticBackupOncePerDayAndOnlyAutomaticOnesArePruned() {
+    void automaticBackupOncePerDayAndOnlyAutomaticOnesArePruned() throws Exception {
         assertNotNull(backups.createAutomaticIfDue());
         assertNull(backups.createAutomaticIfDue(), "pas deux sauvegardes automatiques dans les 24 h");
         backups.createManual();
@@ -91,14 +91,10 @@ class BackupServiceTest {
             reopened.open();
             Jdbc jdbc = new Jdbc(new TransactionManager(reopened));
             assertEquals(0, jdbc.queryLong("SELECT COUNT(*) FROM vehicle"));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
         try (Database saved = new Database(safety.path())) {
             saved.open();
             assertEquals(1, new Jdbc(new TransactionManager(saved)).queryLong("SELECT COUNT(*) FROM vehicle"));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
         assertEquals(Instant.class, safety.createdAt().getClass());
     }

@@ -205,8 +205,4 @@ public final class MigrationEngine {
 
     private record AppliedMigration(int version, String script, String checksum) {
     }
-
-    /** Résultat d'une exécution. {@code backup} est nul si aucune sauvegarde n'était nécessaire. */
-    public record MigrationReport(int fromVersion, int toVersion, List<Migration> applied, Path backup) {
-    }
 }

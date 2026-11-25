@@ -30,15 +30,32 @@ class VehicleCategoryServiceTest {
     }
 
     @Test
-    void sixSystemCategoriesAreSeededAndUserCanAddOne() {
+    void sixEditableCategoriesAreSeededAndUserCanAddOne() {
         assertEquals(6, f.categories.findAll().size());
-        assertTrue(f.categories.findAll().stream().allMatch(VehicleCategory::system));
+        assertTrue(f.categories.findAll().stream().noneMatch(VehicleCategory::system),
+                "aucun traitement ne dépend d'une catégorie de véhicule : aucune n'est verrouillée");
         VehicleCategory moto = f.categories.save(new VehicleCategory(null, 0, "  Moto   taxi ", 60, true, true));
         assertEquals("Moto taxi", moto.name());
-        assertFalse(f.categoryRepo.findById(moto.id()).orElseThrow().system(), "seules les migrations créent des catégories système");
+        assertEquals(false, f.categoryRepo.findById(moto.id()).orElseThrow().system(),
+                "seules les migrations créent des catégories système");
         ValidationException dup = assertThrows(ValidationException.class,
                 () -> f.categories.save(new VehicleCategory(null, 0, "moto TAXI", 0, true, false)));
         assertEquals("category.name.taken", dup.errors().get(0).messageKey());
+    }
+
+    @Test
+    void unusedCategoryIsDeletedUsedOneIsRefused() {
+        VehicleCategory moto = f.categories.save(new VehicleCategory(null, 0, "Moto", 60, true, false));
+        f.categories.delete(moto);
+        assertTrue(f.categoryRepo.findById(moto.id()).isEmpty());
+        assertEquals(1, f.db.jdbc.queryLong("SELECT COUNT(*) FROM audit_log WHERE entity_type = 'vehicle_category'"
+                + " AND action = 'DELETE'"));
+
+        f.vehicle("BZ 1");                                         // catégorie 1 (Taxi) désormais utilisée
+        VehicleCategory taxi = f.categoryRepo.findById(1L).orElseThrow();
+        ValidationException used = assertThrows(ValidationException.class, () -> f.categories.delete(taxi));
+        assertEquals("reference.inUse", used.errors().get(0).messageKey());
+        assertTrue(f.categoryRepo.findById(1L).isPresent());
     }
 
     @Test

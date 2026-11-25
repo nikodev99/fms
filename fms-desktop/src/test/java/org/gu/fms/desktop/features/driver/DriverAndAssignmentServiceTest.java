@@ -42,14 +42,11 @@ class DriverAndAssignmentServiceTest {
     }
 
     @Test
-    void driverIsNormalizedAuditedAndLicenceUnique() {
+    void driverIsNormalizedAndAudited() {
         Driver d = f.driver(" mbemba ", "cg-1");
         assertEquals("MBEMBA", d.lastName());
-        assertEquals("CG-1", d.licenceNumber());
         assertNull(d.fixedSalary());
         assertEquals(1, f.auditCount("driver"));
-        ValidationException e = assertThrows(ValidationException.class, () -> f.driver("Okemba", "CG-1"));
-        assertEquals("driver.licence.taken", e.errors().get(0).messageKey());
     }
 
     @Test

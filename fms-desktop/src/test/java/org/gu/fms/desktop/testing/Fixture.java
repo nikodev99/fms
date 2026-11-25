@@ -3,20 +3,30 @@ package org.gu.fms.desktop.testing;
 import org.gu.fms.desktop.features.allocation.AllocationRuleRepository;
 import org.gu.fms.desktop.features.allocation.AllocationRuleService;
 import org.gu.fms.desktop.features.collection.*;
+import org.gu.fms.desktop.features.document.*;
 import org.gu.fms.desktop.features.driver.AssignmentRepository;
 import org.gu.fms.desktop.features.driver.AssignmentService;
 import org.gu.fms.desktop.features.driver.DriverRepository;
 import org.gu.fms.desktop.features.driver.DriverService;
 import org.gu.fms.desktop.features.finance.*;
+import org.gu.fms.desktop.features.loan.LoanInstalmentRepository;
+import org.gu.fms.desktop.features.loan.LoanRepository;
+import org.gu.fms.desktop.features.loan.LoanReversalHandler;
+import org.gu.fms.desktop.features.loan.LoanService;
 import org.gu.fms.desktop.features.maintenance.*;
 import org.gu.fms.desktop.features.payroll.*;
+import org.gu.fms.desktop.features.security.AuthService;
+import org.gu.fms.desktop.features.security.UserRepository;
+import org.gu.fms.desktop.features.security.UserService;
 import org.gu.fms.desktop.features.settings.FleetPreferencesService;
 import org.gu.fms.desktop.features.vehicle.VehicleCategoryRepository;
 import org.gu.fms.desktop.features.vehicle.VehicleCategoryService;
 import org.gu.fms.desktop.features.vehicle.VehicleRepository;
 import org.gu.fms.desktop.features.vehicle.VehicleService;
 import org.gu.fms.desktop.platform.audit.AuditLog;
+import org.gu.fms.desktop.platform.file.FileStore;
 import org.gu.fms.desktop.platform.format.Formats;
+import org.gu.fms.desktop.platform.security.PasswordHasher;
 import org.gu.fms.desktop.platform.session.UserSession;
 import org.gu.fms.desktop.platform.settings.AppSettings;
 import org.gu.fms.desktop.platform.settings.SettingsStore;
@@ -78,6 +88,7 @@ public final class Fixture implements AutoCloseable {
     public final DriverLedgerRepository driverLedgerRepo;
     public final DriverLedgerService driverLedger;
     public final CollectionService collections;
+    public final CollectionPolicyService collectionPolicy;
     public final DailyPointService dailyPoints;
     public final ClosingService closings;
     public final PayslipRepository payslipRepo;
@@ -86,6 +97,22 @@ public final class Fixture implements AutoCloseable {
     public final AdvanceService advances;
     public final MaintenancePaymentService maintenancePayments;
     public final ReversalService reversals;
+    public final LoanRepository loanRepo;
+    public final LoanInstalmentRepository instalmentRepo;
+    public final LoanService loans;
+    public final DocumentTypeRepository documentTypeRepo;
+    public final FleetDocumentRepository documentRepo;
+    public final FileStore fileStore;
+    public final DocumentFileRepository documentFileRepo;
+    public final DocumentService documents;
+    public final ComplianceService compliance;
+    public final CollectionCalendarService calendar;
+    /** Session des tests de connexion (indépendante de la session « propriétaire » des autres services). */
+    public final UserSession authSession = new UserSession();
+    public final UserRepository userRepo;
+    public final PasswordHasher hasher;
+    public final AuthService auth;
+    public final UserService users;
 
     public Fixture(Path dir) throws Exception {
         db = TestDatabase.migrated(dir);
@@ -130,22 +157,47 @@ public final class Fixture implements AutoCloseable {
         transactions = new TransactionService(transactionRepo, txCategoryRepo, ledger);
         transfers = new TransferService(transferRepo, accountRepo, txCategoryRepo, ledger, db.tx, clocked);
         collectionRepo = new CollectionRepository(db.jdbc, clock, SETTINGS);
+        collectionPolicy = new CollectionPolicyService(settingsStore);
         pointRepo = new DailyPointRepository(db.jdbc, clock, SETTINGS);
         driverLedgerRepo = new DriverLedgerRepository(db.jdbc, clock, SETTINGS);
         driverLedger = new DriverLedgerService(driverLedgerRepo, db.tx, clocked, session, clock, SETTINGS);
-        collections = new CollectionService(collectionRepo, pointRepo, driverRepo, vehicleRepo, txCategoryRepo,transactionRepo, ledger, driverLedger, db.tx, clocked, clock, formats);
-        dailyPoints = new DailyPointService(pointRepo, collectionRepo, assignmentRepo, driverRepo, vehicleRepo,driverLedger, ledger, db.tx, clocked, clock, SETTINGS, formats);
-        closings = new ClosingService(closingRepo, accountRepo, transactionRepo, txCategoryRepo, ledger, dailyPoints,db.tx, clocked, clock, formats);
+        collections = new CollectionService(collectionRepo, pointRepo, driverRepo, vehicleRepo, txCategoryRepo,
+                transactionRepo, ledger, driverLedger, db.tx, clocked, clock, formats);
+        dailyPoints = new DailyPointService(pointRepo, collectionRepo, assignmentRepo, driverRepo, vehicleRepo,
+                driverLedger, ledger, db.tx, clocked, clock, SETTINGS, formats, collectionPolicy);
+        closings = new ClosingService(closingRepo, accountRepo, transactionRepo, txCategoryRepo, ledger, dailyPoints,
+                db.tx, clocked, clock, formats, session);
         payslipRepo = new PayslipRepository(db.jdbc, clock, SETTINGS);
         recoveryPolicy = new RecoveryPolicyService(settingsStore);
         payroll = new PayrollService(payslipRepo, driverRepo, collectionRepo,
                 new PayrollContributionRepository(db.jdbc, CLOCK, SETTINGS), new ItsBandRepository(db.jdbc, CLOCK, SETTINGS),
-                itsSettings, recoveryPolicy, driverLedger, txCategoryRepo, ledger, db.tx, clocked, clock, SETTINGS);
+                itsSettings, recoveryPolicy, driverLedger, txCategoryRepo, ledger, db.tx, clocked, clock, SETTINGS, session);
         advances = new AdvanceService(ledger, transactionRepo, txCategoryRepo, driverRepo, driverLedger,
                 driverLedgerRepo, db.tx, formats);
         maintenancePayments = new MaintenancePaymentService(eventRepo, transactionRepo, txCategoryRepo, ledger, db.tx,
                 formats, SETTINGS);
-        reversals = new ReversalService(transactionRepo, ledger, db.tx, Set.of(new TransferReversalHandler(transfers, transactionRepo), new PayrollReversalHandler(payroll), advances));
+        loanRepo = new LoanRepository(db.jdbc, clock, SETTINGS);
+        instalmentRepo = new LoanInstalmentRepository(db.jdbc, clock, SETTINGS);
+        loans = new LoanService(loanRepo, instalmentRepo, vehicleRepo, accountRepo, txCategoryRepo, ledger, db.tx,
+                clocked, formats, SETTINGS, session);
+        reversals = new ReversalService(transactionRepo, ledger, db.tx, Set.of(
+                new TransferReversalHandler(transfers, transactionRepo), new PayrollReversalHandler(payroll), advances,
+                new LoanReversalHandler(loans)), session);
+        documentTypeRepo = new DocumentTypeRepository(db.jdbc, clock);
+        documentRepo = new FleetDocumentRepository(db.jdbc, clock);
+        fileStore = new FileStore(db.jdbc, clock, session);
+        documentFileRepo = new DocumentFileRepository(db.jdbc, clock);
+        documents = new DocumentService(documentRepo, documentTypeRepo, vehicleRepo, driverRepo, documentFileRepo,
+                fileStore, db.tx, clocked, clock, SETTINGS);
+        compliance = new ComplianceService(documentRepo, documentTypeRepo, vehicleRepo, driverRepo, assignmentRepo,
+                documentFileRepo, fleetPrefs, clock, SETTINGS);
+        calendar = new CollectionCalendarService(collectionRepo, pointRepo, assignmentRepo, driverRepo,
+                collectionPolicy, clock, SETTINGS);
+        userRepo = new UserRepository(db.jdbc, clock);
+        hasher = new PasswordHasher(100_000);
+        auth = new AuthService(userRepo, hasher, authSession, settingsStore, db.tx, clocked, clock);
+        users = new UserService(userRepo, hasher, authSession, db.tx, clocked);
+        session.signIn(UserSession.User.owner(1L, "proprietaire", "Propriétaire"));
     }
 
     public static Money xaf(long amount) {
@@ -157,8 +209,8 @@ public final class Fixture implements AutoCloseable {
                 null, xaf(8_000_000), 10_000L, xaf(1_000_000), null));
     }
 
-    public Driver driver(String lastName, String licence) {
-        return drivers.save(new Driver(null, 0, lastName, "Jean", "06 474 50 67", null, null, licence, null, null,
+    public Driver driver(String lastName, String idNumber) {
+        return drivers.save(new Driver(null, 0, lastName, "Jean", "06 474 50 67", null, idNumber, null,
                 Driver.DriverStatus.ACTIVE, PayScheme.PERCENTAGE, null, Percent.of("15"),
                 xaf(25_000), null, false, null, true, null, null, null));
     }
